@@ -3,807 +3,624 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Villa Master Dashboard</title>
+    <title>Villa Master Portal - Fixed</title>
     
-    <!-- External Libraries -->
+    <!-- Libraries -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
     <style>
-        /* --- GLOBAL STYLES & RESET --- */
-        :root {
-            --primary: #1e3a5f; --secondary: #3498db; --success: #27ae60; --warning: #f39c12;
-            --danger: #e74c3c; --dark: #2c3e50; --light: #f8f9fa;
-        }
-        body { 
-            font-family: 'Poppins', sans-serif; 
-            background-color: #f0f4f8; 
-            margin: 0; 
-            padding: 0; 
-            color: #333;
-        }
+        /* --- GENERAL STYLES --- */
+        body { font-family: 'Poppins', sans-serif; background-color: #f3f4f6; margin: 0; padding: 0; color: #333; }
+        .hidden { display: none !important; }
+        .flex { display: flex; }
         
-        /* --- MASTER NAVIGATION (New) --- */
+        /* --- MASTER NAV --- */
         #master-nav {
-            background: #ffffff;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-            padding: 0 20px;
-            position: sticky;
-            top: 0;
-            z-index: 50;
+            background: white; padding: 0 20px; height: 70px; display: flex; align-items: center; justify-content: space-between;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05); position: sticky; top: 0; z-index: 50;
         }
-        .nav-container {
-            max-width: 1400px;
-            margin: 0 auto;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            height: 70px;
+        .nav-tabs { display: flex; gap: 10px; background: #e2e8f0; padding: 5px; border-radius: 30px; }
+        .nav-tab {
+            padding: 10px 25px; border-radius: 25px; border: none; background: transparent; font-weight: 600; color: #64748b; cursor: pointer; transition: 0.3s;
         }
-        .master-logo {
-            font-size: 1.4rem;
-            font-weight: 700;
-            color: #1e3a5f;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        .nav-tabs {
-            display: flex;
-            gap: 10px;
-            background: #f1f5f9;
-            padding: 5px;
-            border-radius: 50px;
-        }
-        .nav-tab-btn {
-            border: none;
-            background: transparent;
-            padding: 10px 25px;
-            border-radius: 40px;
-            font-family: inherit;
-            font-weight: 600;
-            color: #64748b;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            font-size: 0.95rem;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .nav-tab-btn:hover { color: #334155; background: rgba(255,255,255,0.5); }
-        .nav-tab-btn.active { background: #1e3a5f; color: white; box-shadow: 0 4px 10px rgba(30,58,95,0.3); }
-        
-        .logout-btn {
-            background: #fee2e2;
-            color: #ef4444;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 8px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: 0.2s;
-        }
-        .logout-btn:hover { background: #fecaca; }
+        .nav-tab.active { background: #1e3a5f; color: white; shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        .logout-btn { background: #fee2e2; color: #ef4444; border: none; padding: 8px 16px; border-radius: 6px; font-weight: bold; cursor: pointer; }
 
-        /* --- APP CONTAINER --- */
-        .app-view { display: none; padding: 20px; max-width: 1400px; margin: 0 auto; }
-        .app-view.active { display: block; animation: fadeIn 0.4s ease; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-
-        /* --- LOGIN OVERLAY (Unified) --- */
+        /* --- LOGIN --- */
         #login-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: linear-gradient(135deg, #1e3a5f 0%, #764ba2 100%);
-            display: flex; align-items: center; justify-content: center;
-            z-index: 9999;
+            display: flex; align-items: center; justify-content: center; z-index: 9999;
         }
-        .login-box {
-            background: white; padding: 40px; border-radius: 20px;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.3); text-align: center; width: 90%; max-width: 400px;
-        }
-        .login-input {
-            width: 100%; padding: 15px; margin: 20px 0; border: 2px solid #e2e8f0;
-            border-radius: 10px; font-size: 1rem; outline: none;
-        }
-        .login-input:focus { border-color: #764ba2; }
-        .login-btn {
-            width: 100%; padding: 15px; background: linear-gradient(to right, #1e3a5f, #764ba2);
-            color: white; border: none; border-radius: 10px; font-size: 1.1rem; font-weight: bold; cursor: pointer;
-        }
+        .login-box { background: white; padding: 40px; border-radius: 15px; text-align: center; width: 350px; box-shadow: 0 20px 50px rgba(0,0,0,0.3); }
+        .login-input { width: 100%; padding: 12px; margin: 15px 0; border: 2px solid #ddd; border-radius: 8px; font-size: 1rem; }
+        .login-btn { width: 100%; padding: 12px; background: #1e3a5f; color: white; border: none; border-radius: 8px; font-size: 1rem; font-weight: bold; cursor: pointer; }
 
-        /* =========================================
-           STYLES FROM WEBSITE 1 (Ticket Dashboard)
-           ========================================= */
-        /* Note: Most styles handled by Tailwind, but we keep specific overrides if needed */
-        .ticket-stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 30px; }
-        .ticket-card { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); border-top: 4px solid #3498db; }
-        .ticket-card.yellow { border-color: #f39c12; }
-        .ticket-card.green { border-color: #27ae60; }
-        .ticket-card.purple { border-color: #9b59b6; }
-
-        /* =========================================
-           STYLES FROM WEBSITE 2 (Compound Tracker)
-           ========================================= */
-        /* Importing specific CSS from the second site */
-        .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin: 20px 0; }
-        @media (max-width: 1200px) { .stats-grid { grid-template-columns: repeat(2, 1fr); } }
-        @media (max-width: 768px) { .stats-grid { grid-template-columns: repeat(2, 1fr); } }
-        
-        .stat-card { background: #ffffff; border-radius: 12px; padding: 20px; display: flex; align-items: center; gap: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); transition: transform 0.2s; cursor: pointer; border-left: 5px solid var(--secondary); }
+        /* --- SHARED COMPONENTS --- */
+        .stat-card {
+            background: white; border-radius: 10px; padding: 20px; display: flex; align-items: center; gap: 15px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05); border-left: 5px solid #ccc; cursor: pointer; transition: transform 0.2s;
+        }
         .stat-card:hover { transform: translateY(-3px); }
-        .stat-icon { width: 50px; height: 50px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; background: #f1f5f9; color: var(--dark); }
+        .stat-icon { width: 45px; height: 45px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; color: white; }
         
-        .tab-navigation { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 20px; }
-        .tab-btn { flex: 1; padding: 12px; border: none; background: #f8f9fa; cursor: pointer; font-weight: 600; color: #6c757d; border-bottom: 3px solid transparent; }
-        .tab-btn.active { color: #1e3a5f; border-bottom-color: #1e3a5f; background: #eef2f6; }
-        
-        .table-wrapper { background: white; border-radius: 12px; overflow-x: auto; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin: 20px 0; }
+        /* Table Styles */
+        .table-container { background: white; border-radius: 10px; overflow-x: auto; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-top: 20px; }
         table { width: 100%; border-collapse: collapse; min-width: 900px; }
-        th { background: #1e3a5f; color: white; padding: 15px; text-align: left; font-weight: 600; }
-        td { padding: 12px 15px; border-bottom: 1px solid #e9ecef; font-size: 0.9rem; }
-        tbody tr:hover { background: #f8f9fa; }
+        th { background: #1e3a5f; color: white; padding: 12px 15px; text-align: left; font-size: 0.9rem; }
+        td { padding: 12px 15px; border-bottom: 1px solid #eee; font-size: 0.9rem; }
+        tr:hover { background: #f8fafc; }
 
-        .villa-cards, .ac-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; margin: 20px 0; }
-        .villa-card, .ac-card { background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
-        .villa-card-header, .ac-card-header { padding: 15px; color: white; font-weight: bold; display: flex; justify-content: space-between; }
-        
-        .status-badge { padding: 5px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; }
-        .status-full-renovated { background: #d4edda; color: #155724; }
-        .status-half-renovated { background: #e2d9f3; color: #6f42c1; }
-        .status-in-progress { background: #fff3cd; color: #856404; }
-        .status-non-renovated { background: #f8d7da; color: #721c24; }
+        /* Badge Styles */
+        .badge { padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; }
+        .badge-pending { background: #fef3c7; color: #d97706; }
+        .badge-completed { background: #d1fae5; color: #059669; }
+        .badge-progress { background: #e0e7ff; color: #4f46e5; }
 
-        .view-toggle { display: flex; gap: 5px; background: #e9ecef; padding: 5px; border-radius: 8px; width: fit-content; margin-bottom: 15px; }
-        .view-btn { padding: 8px 16px; border: none; border-radius: 6px; cursor: pointer; background: transparent; font-size: 0.85rem; }
-        .view-btn.active { background: white; color: #1e3a5f; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        /* Specific Colors for System Pending (App 1) */
+        .sys-blue { border-left-color: #3b82f6; background: #eff6ff; }
+        .sys-yellow { border-left-color: #eab308; background: #fefce8; }
+        .sys-green { border-left-color: #22c55e; background: #f0fdf4; }
+        .sys-cyan { border-left-color: #06b6d4; background: #ecfeff; }
+        .sys-purple { border-left-color: #a855f7; background: #faf5ff; }
+        .sys-gray { border-left-color: #6b7280; background: #f3f4f6; }
 
-        .search-container { margin-bottom: 15px; }
-        #searchInput { width: 100%; padding: 12px 15px; border: 1px solid #ddd; border-radius: 8px; outline: none; }
-        #searchInput:focus { border-color: #3498db; }
+        /* Card Styles (App 2) */
+        .card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; margin-top: 20px; }
+        .villa-card { background: white; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        .card-header { padding: 15px; color: white; font-weight: bold; display: flex; justify-content: space-between; }
+        .card-body { padding: 15px; }
+        .card-row { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 0.9rem; border-bottom: 1px dashed #eee; padding-bottom: 5px; }
 
-        /* Utilities */
-        .hidden { display: none !important; }
-        .text-blue { color: #3498db; }
-        .text-green { color: #27ae60; }
-        .text-red { color: #e74c3c; }
     </style>
 </head>
 <body>
 
-    <!-- =======================
-         UNIFIED LOGIN SYSTEM
-         ======================= -->
+    <!-- LOGIN -->
     <div id="login-overlay">
         <div class="login-box">
-            <div style="font-size: 3rem; margin-bottom: 10px;">🏢</div>
-            <h2>Villa Master Portal</h2>
-            <p style="color: #666;">Enter secure password to access</p>
+            <h2 style="margin-top:0;">Villa Master Portal</h2>
+            <p style="color:#666; font-size: 0.9rem;">Secure Access</p>
             <form onsubmit="handleLogin(event)">
-                <input type="password" id="masterPassword" class="login-input" placeholder="Password" required>
-                <button type="submit" class="login-btn">UNLOCK DASHBOARD</button>
+                <input type="password" id="masterPassword" class="login-input" placeholder="Enter Password" required>
+                <button type="submit" class="login-btn">LOGIN</button>
             </form>
-            <p id="loginError" style="color: red; margin-top: 15px; display: none;">Incorrect Password</p>
+            <p id="loginError" style="color:red; display:none; margin-top:10px;">Incorrect Password</p>
         </div>
     </div>
 
-    <!-- =======================
-         MAIN NAVIGATION
-         ======================= -->
+    <!-- MAIN NAV -->
     <nav id="master-nav" class="hidden">
-        <div class="nav-container">
-            <div class="master-logo">
-                <i class="fas fa-building"></i> Villa Master
-            </div>
-            
-            <div class="nav-tabs">
-                <button class="nav-tab-btn active" onclick="switchApp('app1')">
-                    <i class="fas fa-ticket-alt"></i> Tickets
-                </button>
-                <button class="nav-tab-btn" onclick="switchApp('app2')">
-                    <i class="fas fa-home"></i> Compound & AC
-                </button>
-            </div>
-
-            <button class="logout-btn" onclick="logout()">
-                <i class="fas fa-sign-out-alt"></i> Logout
-            </button>
+        <div style="font-weight: bold; font-size: 1.2rem; color: #1e3a5f;">Villa Master Portal</div>
+        <div class="nav-tabs">
+            <button class="nav-tab active" onclick="switchMainTab('tickets')">Maintenance Tickets</button>
+            <button class="nav-tab" onclick="switchMainTab('compound')">Compound & AC</button>
         </div>
+        <button class="logout-btn" onclick="logout()">Logout</button>
     </nav>
 
-    <!-- =======================
-         APP 1: TICKET DASHBOARD
-         ======================= -->
-    <div id="app1" class="app-view">
-        <!-- We inject the content dynamically via JS, preserving structure -->
-        <div id="ticket-app-root"></div>
+    <!-- CONTAINER -->
+    <div style="max-width: 1400px; margin: 30px auto; padding: 0 20px;">
+
+        <!-- APP 1: TICKETS -->
+        <div id="app-tickets">
+            <!-- Ticket Header -->
+            <div style="background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+                <div>
+                    <h2 style="margin:0; color: #1e3a5f;">Maintenance Dashboard</h2>
+                    <p style="margin:5px 0 0; color: #666; font-size: 0.9rem;">Year: <span id="currentYearDisplay" style="font-weight:bold; color:#3b82f6;">2026</span></p>
+                </div>
+                <div style="display:flex; gap:10px;">
+                    <select id="yearSelect" onchange="switchTicketYear(this.value)" style="padding: 8px; border-radius: 6px; border: 1px solid #ddd;">
+                        <!-- Filled by JS -->
+                    </select>
+                    <button onclick="resetTicketDashboard()" style="background: #8b5cf6; color: white; border: none; padding: 8px 15px; border-radius: 6px; cursor: pointer;">🏠 Home</button>
+                    <button onclick="loadTicketData()" style="background: #3b82f6; color: white; border: none; padding: 8px 15px; border-radius: 6px; cursor: pointer;">Refresh</button>
+                </div>
+            </div>
+
+            <!-- Ticket Stats -->
+            <div id="ticketStatsArea" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-top: 20px;">
+                <!-- Filled by JS -->
+            </div>
+
+            <!-- Pending by System (FIXED) -->
+            <div id="systemPendingArea" style="background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-top: 20px;">
+                <h3 style="margin-top:0; color: #1e3a5f;">⚙️ Pending Work by System</h3>
+                <div id="systemGrid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin-top: 15px;">
+                    <!-- Filled by JS -->
+                </div>
+            </div>
+
+            <!-- Filters (FIXED: Added Details Search) -->
+            <div style="background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-top: 20px;">
+                <h3 style="margin-top:0;">🔍 Search & Filter</h3>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-top: 15px;">
+                    <input type="text" id="mrfInput" placeholder="MRF No" class="login-input" style="margin:0;">
+                    <input type="text" id="villaInput" placeholder="Villa/Flat" class="login-input" style="margin:0;">
+                    <select id="systemInput" class="login-input" style="margin:0;"><option value="">All Systems</option></select>
+                    <select id="statusInput" class="login-input" style="margin:0;">
+                        <option value="">All Status</option><option value="pending">Pending</option><option value="progress">In Progress</option><option value="completed">Completed</option>
+                    </select>
+                    <!-- FIXED: Added Details Search Here -->
+                    <input type="text" id="detailsInput" placeholder="Search Details" class="login-input" style="margin:0;">
+                </div>
+                <div style="margin-top: 15px; display: flex; gap: 10px;">
+                    <button onclick="applyTicketFilters()" style="background: #1e3a5f; color: white; padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer;">Search</button>
+                    <button onclick="resetTicketDashboard()" id="clearBtn" style="background: #ef4444; color: white; padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer; display:none;">Clear Search</button>
+                </div>
+            </div>
+
+            <!-- Ticket Table -->
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr><th>Date</th><th>MRF No</th><th>Villa</th><th>System</th><th>Details</th><th>Status</th></tr>
+                    </thead>
+                    <tbody id="ticketTableBody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- APP 2: COMPOUND -->
+        <div id="app-compound" class="hidden">
+            <!-- Sub-Nav -->
+            <div style="background: white; padding: 10px; border-radius: 10px; margin-bottom: 20px; display: flex; gap: 10px;">
+                <button id="tabRenov" class="nav-tab active" onclick="switchCompoundTab('renovation')">Renovation Status</button>
+                <button id="tabAC" class="nav-tab" onclick="switchCompoundTab('ac')">AC Replacement</button>
+            </div>
+
+            <!-- SEARCH BAR -->
+            <div style="margin-bottom: 20px;">
+                <input type="text" id="compoundSearch" placeholder="Search Villas..." onkeyup="handleCompoundSearch()" style="width: 100%; padding: 15px; border: 1px solid #ddd; border-radius: 10px; font-size: 1rem; outline: none;">
+            </div>
+
+            <!-- RENOVATION CONTENT -->
+            <div id="viewRenovation">
+                <!-- Stats -->
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+                    <div class="stat-card" style="border-left-color: #3b82f6;" onclick="filterRenov('all')"><div class="stat-icon" style="background:#3b82f6"><i class="fas fa-home"></i></div><div><h3 id="rTotal">0</h3><p>Total</p></div></div>
+                    <div class="stat-card" style="border-left-color: #22c55e;" onclick="filterRenov('full')"><div class="stat-icon" style="background:#22c55e"><i class="fas fa-check"></i></div><div><h3 id="rFull">0</h3><p>Full</p></div></div>
+                    <div class="stat-card" style="border-left-color: #a855f7;" onclick="filterRenov('half')"><div class="stat-icon" style="background:#a855f7"><i class="fas fa-adjust"></i></div><div><h3 id="rHalf">0</h3><p>Half</p></div></div>
+                    <div class="stat-card" style="border-left-color: #eab308;" onclick="filterRenov('prog')"><div class="stat-icon" style="background:#eab308"><i class="fas fa-tools"></i></div><div><h3 id="rProg">0</h3><p>Progress</p></div></div>
+                    <div class="stat-card" style="border-left-color: #ef4444;" onclick="filterRenov('non')"><div class="stat-icon" style="background:#ef4444"><i class="fas fa-times"></i></div><div><h3 id="rNon">0</h3><p>Non-Renovated</p></div></div>
+                </div>
+
+                <!-- View Toggle -->
+                <div style="margin: 20px 0; display: flex; gap: 10px;">
+                    <button onclick="toggleView('renov', 'table')" id="btnRenovTable" style="background: #1e3a5f; color: white; padding: 8px 15px; border: none; border-radius: 6px;">Table</button>
+                    <button onclick="toggleView('renov', 'cards')" id="btnRenovCards" style="background: #e2e8f0; color: #333; padding: 8px 15px; border: none; border-radius: 6px;">Cards</button>
+                </div>
+
+                <!-- Renovation Data -->
+                <div id="renovTableContainer" class="table-container"><table><thead><tr><th>Villa</th><th>Status</th><th>Cost</th><th>Duration</th><th>Date</th><th>Notes</th></tr></thead><tbody id="renovTableBody"></tbody></table></div>
+                <div id="renovCardContainer" class="card-grid"></div>
+            </div>
+
+            <!-- AC CONTENT -->
+            <div id="viewAC" class="hidden">
+                 <!-- Stats -->
+                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+                    <div class="stat-card" style="border-left-color: #3b82f6;" onclick="filterAC('all')"><div class="stat-icon" style="background:#3b82f6"><i class="fas fa-wind"></i></div><div><h3 id="aTotal">0</h3><p>Total ACs</p></div></div>
+                    <div class="stat-card" style="border-left-color: #22c55e;" onclick="filterAC('new')"><div class="stat-icon" style="background:#22c55e"><i class="fas fa-plus"></i></div><div><h3 id="aNew">0</h3><p>New ACs</p></div></div>
+                    <div class="stat-card" style="border-left-color: #eab308;" onclick="filterAC('old')"><div class="stat-icon" style="background:#eab308"><i class="fas fa-history"></i></div><div><h3 id="aOld">0</h3><p>Old ACs</p></div></div>
+                </div>
+
+                 <!-- View Toggle -->
+                 <div style="margin: 20px 0; display: flex; gap: 10px;">
+                    <button onclick="toggleView('ac', 'table')" id="btnACTable" style="background: #1e3a5f; color: white; padding: 8px 15px; border: none; border-radius: 6px;">Table</button>
+                    <button onclick="toggleView('ac', 'cards')" id="btnACCards" style="background: #e2e8f0; color: #333; padding: 8px 15px; border: none; border-radius: 6px;">Cards</button>
+                </div>
+
+                <!-- AC Data -->
+                <div id="acTableContainer" class="table-container"><table><thead><tr><th>Villa</th><th>LVR</th><th>Sit</th><th>Off</th><th>M1</th><th>M2</th><th>M3</th><th>Kid</th><th>Gst</th><th>Kit</th><th>SQ</th><th>St</th><th>Pat</th><th>Total</th></tr></thead><tbody id="acTableBody"></tbody></table></div>
+                <div id="acCardContainer" class="card-grid"></div>
+            </div>
+        </div>
+
     </div>
 
-    <!-- =======================
-         APP 2: COMPOUND TRACKER
-         ======================= -->
-    <div id="app2" class="app-view">
-        <div class="tab-navigation">
-            <div class="search-container">
-                <input type="text" id="searchInput" placeholder="Search Villas, AC or Renovation Status..." onkeyup="handleGlobalSearch()">
-            </div>
-            <div style="display: flex; width: 100%; gap: 10px;">
-                <button class="tab-btn active" onclick="switchTab('renovation')">
-                    <i class="fas fa-home"></i> Renovation Status
-                </button>
-                <button class="tab-btn" onclick="switchTab('ac')">
-                    <i class="fas fa-wind"></i> AC Replacement
-                </button>
-            </div>
-        </div>
-
-        <!-- RENOVATION CONTENT -->
-        <div id="renovationTab" class="tab-content active">
-            <div class="stats-grid">
-                <div class="stat-card total" onclick="filterRenovation('all')">
-                    <div class="stat-icon"><i class="fas fa-home"></i></div>
-                    <div class="stat-info"><h3 id="totalVillas">0</h3><p>Total Villas</p></div>
-                </div>
-                <div class="stat-card" style="border-left-color: #27ae60;" onclick="filterRenovation('full')">
-                    <div class="stat-icon" style="color: #27ae60;"><i class="fas fa-check-circle"></i></div>
-                    <div class="stat-info"><h3 id="fullRenovated">0</h3><p>Full Renovated</p></div>
-                </div>
-                <div class="stat-card" style="border-left-color: #9b59b6;" onclick="filterRenovation('half')">
-                    <div class="stat-icon" style="color: #9b59b6;"><i class="fas fa-adjust"></i></div>
-                    <div class="stat-info"><h3 id="halfRenovated">0</h3><p>Half Renovated</p></div>
-                </div>
-                <div class="stat-card" style="border-left-color: #f39c12;" onclick="filterRenovation('progress')">
-                    <div class="stat-icon" style="color: #f39c12;"><i class="fas fa-tools"></i></div>
-                    <div class="stat-info"><h3 id="inProgress">0</h3><p>Under Renovation</p></div>
-                </div>
-                <div class="stat-card" style="border-left-color: #e74c3c;" onclick="filterRenovation('non')">
-                    <div class="stat-icon" style="color: #e74c3c;"><i class="fas fa-times-circle"></i></div>
-                    <div class="stat-info"><h3 id="nonRenovated">0</h3><p>Non Renovated</p></div>
-                </div>
-            </div>
-
-            <div class="view-toggle-section">
-                <div class="view-toggle">
-                    <button class="view-btn active" onclick="switchView('table')"><i class="fas fa-table"></i> Table</button>
-                    <button class="view-btn" onclick="switchView('cards')"><i class="fas fa-th-large"></i> Cards</button>
-                </div>
-            </div>
-
-            <div class="view-content active" id="tableView">
-                <div class="table-wrapper">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Villa No</th>
-                                <th>Status</th>
-                                <th>Cost</th>
-                                <th>Duration</th>
-                                <th>Date</th>
-                                <th>Remarks</th>
-                                <th>Notes</th>
-                            </tr>
-                        </thead>
-                        <tbody id="renovationTable"></tbody>
-                    </table>
-                </div>
-            </div>
-
-            <div class="view-content" id="cardsView">
-                <div class="villa-cards" id="villaCards"></div>
-            </div>
-        </div>
-
-        <!-- AC CONTENT -->
-        <div id="acTab" class="tab-content">
-            <div class="stats-grid">
-                <div class="stat-card total" onclick="filterAC('all')">
-                    <div class="stat-icon"><i class="fas fa-wind"></i></div>
-                    <div class="stat-info"><h3 id="totalACs">0</h3><p>Total ACs</p></div>
-                </div>
-                <div class="stat-card" style="border-left-color: #27ae60;" onclick="filterAC('new')">
-                    <div class="stat-icon" style="color: #27ae60;"><i class="fas fa-plus-circle"></i></div>
-                    <div class="stat-info"><h3 id="totalNewACs">0</h3><p>New ACs</p></div>
-                </div>
-                <div class="stat-card" style="border-left-color: #f39c12;" onclick="filterAC('old')">
-                    <div class="stat-icon" style="color: #f39c12;"><i class="fas fa-history"></i></div>
-                    <div class="stat-info"><h3 id="totalOldACs">0</h3><p>Old ACs</p></div>
-                </div>
-                <div class="stat-card" style="border-left-color: #1e3a5f;" onclick="filterAC('all')">
-                    <div class="stat-icon"><i class="fas fa-home"></i></div>
-                    <div class="stat-info"><h3 id="villasWithAC">0</h3><p>Villas</p></div>
-                </div>
-            </div>
-
-            <div class="view-toggle-section">
-                <div class="view-toggle">
-                    <button class="view-btn active" onclick="switchACView('table')"><i class="fas fa-table"></i> Table</button>
-                    <button class="view-btn" onclick="switchACView('cards')"><i class="fas fa-th-large"></i> Cards</button>
-                </div>
-            </div>
-
-            <div class="view-content active" id="acTableView">
-                <div class="table-wrapper">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Villa</th><th>LVR</th><th>Sitting</th><th>Office</th>
-                                <th>MBR 1</th><th>MBR 2</th><th>MBR 3</th><th>Kids</th>
-                                <th>Guest</th><th>Kitchen</th><th>SQ</th><th>Store</th><th>Patio</th>
-                                <th>Total Qty</th>
-                            </tr>
-                        </thead>
-                        <tbody id="acTable"></tbody>
-                    </table>
-                </div>
-            </div>
-            <div class="view-content" id="acCardsView">
-                <div class="ac-cards" id="acCards"></div>
-            </div>
-        </div>
-        
-        <div style="text-align: right; margin-top: 20px;">
-            <button onclick="exportData()" style="padding: 10px 20px; background: #27ae60; color: white; border: none; border-radius: 8px; cursor: pointer;">
-                <i class="fas fa-file-excel"></i> Export Data
-            </button>
-            <button onclick="window.open('https://docs.google.com/spreadsheets/d/1NQguf6umaBIgBmPDu3EYqQXBW6Ovo6pcoTkalDSUlnk/edit', '_blank')" style="padding: 10px 20px; background: #f39c12; color: white; border: none; border-radius: 8px; cursor: pointer; margin-left: 10px;">
-                <i class="fas fa-table"></i> Open Sheet
-            </button>
-        </div>
-    </div>
-
-    <!-- =======================
-         JAVASCRIPT LOGIC
-         ======================= -->
     <script>
-        // --- CONFIGURATION ---
-        const MASTER_PASSWORD = 'villa2025'; // Unified Password
-        const SHEET_ID_1 = '1T8p2ojn8W6jmC5rTAcZ7xxE7MKy-n9fa5ke4QFzVQY4'; // Tickets
-        const SHEET_ID_2 = '1NQguf6umaBIgBmPDu3EYqQXBW6Ovo6pcoTkalDSUlnk'; // Compound
-
+        // --- CONFIG ---
+        const PASSWORD = 'villa2025';
+        const SHEET_1 = '1T8p2ojn8W6jmC5rTAcZ7xxE7MKy-n9fa5ke4QFzVQY4';
+        const SHEET_2 = '1NQguf6umaBIgBmPDu3EYqQXBW6Ovo6pcoTkalDSUlnk';
+        
         // --- GLOBAL STATE ---
-        let activeApp = 'app1';
-        let renovationData = [];
-        let acData = [];
-
-        // =========================================
-        // APP 1: TICKET DASHBOARD LOGIC (ADAPTED)
-        // =========================================
-        const SHEETS = {
-            '2026': { gid: '878818171', label: 'Year 2026' }, '2025': { gid: '931447490', label: 'Year 2025' },
-            '2024': { gid: '17034059', label: 'Year 2024' }, '2023': { gid: '524434308', label: 'Year 2023' },
-            '2022': { gid: '174001593', label: 'Year 2022' }, '2021': { gid: '1182812429', label: 'Year 2021' },
-            '2020': { gid: '0', label: 'Year 2020' }, '2019': { gid: '260773250', label: 'Year 2019' },
-            '2018': { gid: '1420362351', label: 'Year 2018' }
-        };
-        let selectedYear = '2026';
+        let ticketYear = '2026';
         let allTickets = [];
-        let ticketFilters = { mrfNo: '', villa: '', system: '', status: '', details: '' };
+        let ticketFilters = { mrf: '', villa: '', system: '', status: '', details: '' };
+        
+        let renovData = [];
+        let acData = [];
+        let compoundFilter = 'all';
 
-        // --- INITIALIZATION ---
-        document.addEventListener('DOMContentLoaded', () => {
-            if (sessionStorage.getItem('masterAuth') === 'true') {
-                showDashboard();
-            }
-        });
+        // --- INIT ---
+        if(sessionStorage.getItem('auth') === 'true') showApp();
 
         function handleLogin(e) {
             e.preventDefault();
-            if (document.getElementById('masterPassword').value === MASTER_PASSWORD) {
-                sessionStorage.setItem('masterAuth', 'true');
-                showDashboard();
+            if(document.getElementById('masterPassword').value === PASSWORD) {
+                sessionStorage.setItem('auth', 'true');
+                showApp();
             } else {
                 document.getElementById('loginError').style.display = 'block';
             }
         }
 
-        function showDashboard() {
+        function showApp() {
             document.getElementById('login-overlay').classList.add('hidden');
             document.getElementById('master-nav').classList.remove('hidden');
             
-            // Initialize both apps
-            initTicketApp();
-            initCompoundApp();
+            // Load Data
+            initTickets();
+            initCompound();
         }
 
         function logout() {
-            sessionStorage.removeItem('masterAuth');
+            sessionStorage.removeItem('auth');
             location.reload();
         }
 
-        function switchApp(appId) {
-            // Update Tabs
-            document.querySelectorAll('.nav-tab-btn').forEach(b => b.classList.remove('active'));
-            event.currentTarget.classList.add('active');
+        function switchMainTab(tab) {
+            document.querySelectorAll('.nav-tab').forEach(b => b.classList.remove('active'));
+            event.target.classList.add('active');
             
-            // Switch Views
-            document.querySelectorAll('.app-view').forEach(v => v.classList.remove('active'));
-            document.getElementById(appId).classList.add('active');
-            activeApp = appId;
+            document.getElementById('app-tickets').classList.add('hidden');
+            document.getElementById('app-compound').classList.add('hidden');
+            
+            document.getElementById(`app-${tab}`).classList.remove('hidden');
         }
 
-        // =========================================
-        // TICKET APP FUNCTIONS
-        // =========================================
-        function initTicketApp() {
-            renderTicketStructure();
+        // ============================================
+        // APP 1: TICKETS
+        // ============================================
+        const SHEETS_GIDS = {
+            '2026': '878818171', '2025': '931447490', '2024': '17034059', '2023': '524434308',
+            '2022': '174001593', '2021': '1182812429', '2020': '0', '2019': '260773250', '2018': '1420362351'
+        };
+
+        async function initTickets() {
+            const select = document.getElementById('yearSelect');
+            select.innerHTML = Object.keys(SHEETS_GIDS).sort((a,b)=>b.localeCompare(a)).map(y => `<option value="${y}">Year ${y}</option>`).join('');
+            select.value = ticketYear;
             loadTicketData();
-        }
-
-        function renderTicketStructure() {
-            document.getElementById('ticket-app-root').innerHTML = `
-                <div style="background: white; padding: 20px; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
-                    <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 15px;">
-                        <div>
-                            <h2 style="font-size: 1.5rem; color: #1e3a5f; margin: 0;">🏢 Maintenance Tickets</h2>
-                            <p style="color: #666; font-size: 0.9rem;">Manage daily MRF requests</p>
-                        </div>
-                        <div style="display: flex; gap: 10px;">
-                            <select id="yearSelect" onchange="switchTicketYear(this.value)" style="padding: 10px; border-radius: 8px; border: 1px solid #ddd;">
-                                ${Object.keys(SHEETS).sort((a,b)=>b.localeCompare(a)).map(y => `<option value="${y}">${SHEETS[y].label}</option>`).join('')}
-                            </select>
-                            <button onclick="loadTicketData()" style="padding: 10px 15px; background: #3498db; color: white; border: none; border-radius: 8px; cursor: pointer;">Refresh</button>
-                        </div>
-                    </div>
-                </div>
-
-                <div id="ticketStats" class="ticket-stats-grid"></div>
-
-                <div style="background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 20px;">
-                    <h3 style="margin-top: 0;">Search Filters</h3>
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 15px;">
-                        <input type="text" id="mrfInput" placeholder="MRF No" class="ticket-filter-input" style="padding: 10px; border: 1px solid #ddd; border-radius: 6px; width: 100%;">
-                        <input type="text" id="villaInput" placeholder="Villa No" class="ticket-filter-input" style="padding: 10px; border: 1px solid #ddd; border-radius: 6px; width: 100%;">
-                        <select id="systemInput" class="ticket-filter-input" style="padding: 10px; border: 1px solid #ddd; border-radius: 6px; width: 100%;"><option value="">All Systems</option></select>
-                        <select id="statusInput" class="ticket-filter-input" style="padding: 10px; border: 1px solid #ddd; border-radius: 6px; width: 100%;">
-                            <option value="">All Status</option><option value="pending">Pending</option><option value="progress">In Progress</option><option value="completed">Completed</option>
-                        </select>
-                        <button onclick="applyTicketFilters()" style="padding: 10px; background: #1e3a5f; color: white; border: none; border-radius: 6px; cursor: pointer;">Search</button>
-                    </div>
-                </div>
-
-                <div id="ticketTableContainer" style="background: white; border-radius: 12px; overflow-x: auto; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
-                    <table style="width: 100%; border-collapse: collapse;">
-                        <thead style="background: #1e3a5f; color: white;">
-                            <tr><th>Date</th><th>MRF</th><th>Villa</th><th>System</th><th>Details</th><th>Status</th></tr>
-                        </thead>
-                        <tbody id="ticketTableBody"></tbody>
-                    </table>
-                </div>
-            `;
         }
 
         async function loadTicketData() {
             const tbody = document.getElementById('ticketTableBody');
-            if(tbody) tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding: 20px;">Loading...</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">Loading...</td></tr>';
             
             try {
-                const gid = SHEETS[selectedYear].gid;
-                const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID_1}/export?format=csv&gid=${gid}`;
+                const gid = SHEETS_GIDS[ticketYear];
+                const url = `https://docs.google.com/spreadsheets/d/${SHEET_1}/export?format=csv&gid=${gid}`;
                 const res = await fetch(url);
                 const csv = await res.text();
-                const lines = csv.split('\n').filter(l => l.trim());
+                const lines = csv.split('\n');
                 
                 allTickets = [];
-                const systems = new Set();
-                
-                for (let i = 1; i < lines.length; i++) {
+                // Skip Header
+                for(let i=1; i<lines.length; i++) {
                     const vals = parseCSV(lines[i]);
-                    if (vals[2]) { // MRF No exists
+                    if(vals[2]) { // Has MRF
                         allTickets.push({
-                            date: vals[0] || '', time: vals[1] || '', mrfNo: vals[2] || '',
-                            villa: vals[3] || '', system: vals[4] || '', details: vals[6] || '',
-                            status: vals[10] || 'Pending'
+                            date: vals[0], time: vals[1], mrf: vals[2], villa: vals[3], 
+                            system: vals[4], rec: vals[5], details: vals[6], intBy: vals[7],
+                            actBy: vals[8], actDate: vals[9], status: vals[10] || 'Pending'
                         });
-                        if(vals[4]) systems.add(vals[4]);
                     }
                 }
                 
-                // Update Systems Dropdown
-                const sysSelect = document.getElementById('systemInput');
-                if(sysSelect) {
-                    sysSelect.innerHTML = '<option value="">All Systems</option>' + [...systems].map(s => `<option value="${s}">${s}</option>`).join('');
-                }
-
-                renderTickets();
-                updateTicketStats();
+                renderTicketSystemStats(); // NEW
+                renderTicketView();
             } catch(e) {
-                console.error(e);
-                if(tbody) tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color: red;">Error loading data</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:red;">Error Loading</td></tr>';
             }
         }
 
-        function renderTickets() {
-            const tbody = document.getElementById('ticketTableBody');
-            if(!tbody) return;
-
-            const f = ticketFilters;
-            const filtered = allTickets.filter(t => {
-                return (!f.mrfNo || t.mrfNo.toLowerCase().includes(f.mrfNo.toLowerCase())) &&
-                       (!f.villa || t.villa.toLowerCase().includes(f.villa.toLowerCase())) &&
-                       (!f.system || t.system === f.system) &&
-                       (!f.status || t.status.toLowerCase().includes(f.status.toLowerCase()));
-            });
-
-            if(filtered.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding: 20px;">No tickets found</td></tr>';
-                return;
-            }
-
-            tbody.innerHTML = filtered.slice(0, 50).map(t => `
-                <tr style="border-bottom: 1px solid #eee;">
-                    <td style="padding: 12px;">${t.date}</td>
-                    <td style="font-weight: bold; color: #3498db;">${t.mrfNo}</td>
-                    <td>${t.villa}</td>
-                    <td><span style="background: #eef2f6; padding: 4px 8px; border-radius: 4px; font-size: 0.8rem;">${t.system}</span></td>
-                    <td style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${t.details}</td>
-                    <td><span class="status-badge ${getStatusBadgeClass(t.status)}">${t.status}</span></td>
-                </tr>
-            `).join('');
-        }
-
-        function getStatusBadgeClass(s) {
-            s = s.toLowerCase();
-            if(s.includes('completed')) return 'status-full-renovated'; // Green
-            if(s.includes('progress')) return 'status-in-progress'; // Yellow
-            return 'status-non-renovated'; // Red/Gray
-        }
-
-        function updateTicketStats() {
-            const stats = {
-                total: allTickets.length,
-                pending: allTickets.filter(t => !t.status || t.status.toLowerCase().includes('pending')).length,
-                completed: allTickets.filter(t => t.status.toLowerCase().includes('completed')).length,
-                progress: allTickets.filter(t => t.status.toLowerCase().includes('progress')).length,
+        function renderTicketSystemStats() {
+            const pending = allTickets.filter(t => !t.status || t.status.toLowerCase().includes('pending'));
+            const sysMap = {
+                'AC': {c:'blue', i:'❄️'}, 'Electrical': {c:'yellow', i:'⚡'}, 'Plumbing': {c:'cyan', i:'🚰'},
+                'Carpentry': {c:'gray', i:'🔨'}, 'Painting': {c:'purple', i:'🎨'}, 'Mason': {c:'green', i:'🧱'}
             };
             
-            const html = `
-                <div class="ticket-card"><h3 style="font-size: 1.5rem; margin: 0;">${stats.total}</h3><p style="margin: 0; color: #666;">Total</p></div>
-                <div class="ticket-card yellow"><h3 style="font-size: 1.5rem; margin: 0;">${stats.pending}</h3><p style="margin: 0; color: #666;">Pending</p></div>
-                <div class="ticket-card purple"><h3 style="font-size: 1.5rem; margin: 0;">${stats.progress}</h3><p style="margin: 0; color: #666;">In Progress</p></div>
-                <div class="ticket-card green"><h3 style="font-size: 1.5rem; margin: 0;">${stats.completed}</h3><p style="margin: 0; color: #666;">Completed</p></div>
-            `;
-            const container = document.getElementById('ticketStats');
-            if(container) container.innerHTML = html;
+            const html = Object.keys(sysMap).map(sys => {
+                const count = pending.filter(t => t.system === sys).length;
+                return `
+                    <div class="stat-card sys-${sysMap[sys].c}" onclick="applySystemFilter('${sys}')">
+                        <div class="stat-icon" style="background: #ccc; color: #555;">${sysMap[sys].i}</div>
+                        <div>
+                            <h3 style="margin:0; font-size:1.5rem;">${count}</h3>
+                            <p style="margin:0; font-size:0.9rem;">${sys}</p>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            document.getElementById('systemGrid').innerHTML = html;
+        }
+
+        function applySystemFilter(sys) {
+            document.getElementById('systemInput').value = sys;
+            document.getElementById('statusInput').value = 'pending';
+            applyTicketFilters();
+        }
+
+        function switchTicketYear(y) {
+            ticketYear = y;
+            document.getElementById('currentYearDisplay').innerText = y;
+            resetTicketDashboard();
+            loadTicketData();
+        }
+
+        function resetTicketDashboard() {
+            ticketFilters = { mrf: '', villa: '', system: '', status: '', details: '' };
+            document.getElementById('mrfInput').value = '';
+            document.getElementById('villaInput').value = '';
+            document.getElementById('systemInput').value = '';
+            document.getElementById('statusInput').value = '';
+            document.getElementById('detailsInput').value = '';
+            document.getElementById('clearBtn').style.display = 'none';
+            renderTicketView();
         }
 
         function applyTicketFilters() {
-            ticketFilters.mrfNo = document.getElementById('mrfInput').value.trim();
+            ticketFilters.mrf = document.getElementById('mrfInput').value.trim();
             ticketFilters.villa = document.getElementById('villaInput').value.trim();
             ticketFilters.system = document.getElementById('systemInput').value;
             ticketFilters.status = document.getElementById('statusInput').value;
-            renderTickets();
+            ticketFilters.details = document.getElementById('detailsInput').value.trim(); // FIXED
+            document.getElementById('clearBtn').style.display = 'block';
+            renderTicketView();
         }
 
-        function switchTicketYear(y) { selectedYear = y; loadTicketData(); }
+        function renderTicketView() {
+            const f = ticketFilters;
+            const filtered = allTickets.filter(t => {
+                return (!f.mrf || t.mrf.toLowerCase().includes(f.mrf.toLowerCase())) &&
+                       (!f.villa || t.villa.toLowerCase().includes(f.villa.toLowerCase())) &&
+                       (!f.system || t.system === f.system) &&
+                       (!f.status || t.status.toLowerCase().includes(f.status.toLowerCase())) &&
+                       (!f.details || t.details.toLowerCase().includes(f.details.toLowerCase())); // FIXED
+            });
 
-        function parseCSV(line) {
-            const vals = []; let cur = '', inQ = false;
-            for (let c of line) {
-                if (c === '"') inQ = !inQ;
-                else if (c === ',' && !inQ) { vals.push(cur.trim().replace(/^"|"$/g, '')); cur = ''; }
-                else cur += c;
+            // Update Top Stats based on Filter
+            const stats = {
+                t: filtered.length, p: filtered.filter(x=>x.status.toLowerCase().includes('pending')).length,
+                c: filtered.filter(x=>x.status.toLowerCase().includes('completed')).length,
+                pr: filtered.filter(x=>x.status.toLowerCase().includes('progress')).length
+            };
+            
+            document.getElementById('ticketStatsArea').innerHTML = `
+                <div class="stat-card" style="border-left-color:#3b82f6"><div class="stat-icon" style="background:#3b82f6">T</div><div><h3>${stats.t}</h3><p>Total</p></div></div>
+                <div class="stat-card" style="border-left-color:#eab308"><div class="stat-icon" style="background:#eab308">P</div><div><h3>${stats.p}</h3><p>Pending</p></div></div>
+                <div class="stat-card" style="border-left-color:#4f46e5"><div class="stat-icon" style="background:#4f46e5">I</div><div><h3>${stats.pr}</h3><p>In Progress</p></div></div>
+                <div class="stat-card" style="border-left-color:#22c55e"><div class="stat-icon" style="background:#22c55e">C</div><div><h3>${stats.c}</h3><p>Completed</p></div></div>
+            `;
+
+            // Table
+            const tbody = document.getElementById('ticketTableBody');
+            if(filtered.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">No tickets found</td></tr>';
+            } else {
+                tbody.innerHTML = filtered.map(t => `
+                    <tr>
+                        <td>${t.date}</td>
+                        <td style="font-weight:bold; color:#3b82f6;">${t.mrf}</td>
+                        <td>${t.villa}</td>
+                        <td><span style="background:#eff6ff; color:#1e40af; padding:2px 8px; border-radius:4px; font-size:0.8rem;">${t.system}</span></td>
+                        <td style="max-width:250px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${t.details}</td>
+                        <td><span class="badge ${getBadge(t.status)}">${t.status}</span></td>
+                    </tr>
+                `).join('');
             }
-            vals.push(cur.trim().replace(/^"|"$/g, ''));
-            return vals;
         }
 
-        // =========================================
-        // APP 2: COMPOUND TRACKER LOGIC
-        // =========================================
-        async function initCompoundApp() {
-            showLoading(true);
+        function getBadge(s) {
+            if(s.toLowerCase().includes('completed')) return 'badge-completed';
+            if(s.toLowerCase().includes('progress')) return 'badge-progress';
+            return 'badge-pending';
+        }
+
+        // ============================================
+        // APP 2: COMPOUND
+        // ============================================
+        async function initCompound() {
             try {
-                // Parallel Fetch
-                await Promise.all([fetchRenovationData(), fetchACData()]);
-                updateRenovationView();
-                updateACView();
-            } catch(e) {
-                console.error(e);
-                alert("Error loading Compound Data");
-            } finally {
-                showLoading(false);
-            }
+                await Promise.all([fetchRenov(), fetchAC()]);
+                renderCompound();
+            } catch(e) { console.error(e); }
         }
 
-        function showLoading(show) {
-            // Simple toggle for loading state if needed, usually compound loads fast
-            // For brevity in merged file, we skip the complex overlay and rely on async rendering
-        }
-
-        async function fetchRenovationData() {
-            const res = await fetch(`https://docs.google.com/spreadsheets/d/${SHEET_ID_2}/gviz/tq?tqx=out:json&gid=0`);
-            const text = await res.text();
-            const json = JSON.parse(text.substring(text.indexOf('{'), text.lastIndexOf('}') + 1));
-            renovationData = json.table.rows.map((row, i) => {
-                const c = row.c;
-                return {
-                    id: i, villaNo: getVal(c, 0), status: getVal(c, 1), dateRenovated: getVal(c, 2),
-                    remarks: getVal(c, 3), cost: parseFloat(String(getVal(c, 4)).replace(/[^0-9.-]/g, '')) || 0,
-                    startDate: getVal(c, 5), endDate: getVal(c, 6), notes: getVal(c, 7)
+        async function fetchRenov() {
+            const res = await fetch(`https://docs.google.com/spreadsheets/d/${SHEET_2}/gviz/tq?tqx=out:json&gid=0`);
+            const txt = await res.text();
+            const json = JSON.parse(txt.substring(txt.indexOf('{'), txt.lastIndexOf('}')+1));
+            renovData = json.table.rows.map((r,i) => {
+                const c = r.c;
+                return { 
+                    id: i, v: getVal(c,0), s: getVal(c,1), dR: getVal(c,2), rem: getVal(c,3), 
+                    cost: parseFloat(String(getVal(c,4)).replace(/[^0-9.-]/g,''))||0, sD: getVal(c,5), eD: getVal(c,6), n: getVal(c,7)
                 };
-            }).filter(r => r.villaNo && !String(r.villaNo).toLowerCase().includes('villa no'));
+            }).filter(x => x.v && !String(x.v).toLowerCase().includes('villa'));
         }
 
-        async function fetchACData() {
-            const res = await fetch(`https://docs.google.com/spreadsheets/d/${SHEET_ID_2}/gviz/tq?tqx=out:json&gid=7537460`);
-            const text = await res.text();
-            const json = JSON.parse(text.substring(text.indexOf('{'), text.lastIndexOf('}') + 1));
-            acData = json.table.rows.map((row, i) => {
-                const c = row.c;
+        async function fetchAC() {
+            const res = await fetch(`https://docs.google.com/spreadsheets/d/${SHEET_2}/gviz/tq?tqx=out:json&gid=7537460`);
+            const txt = await res.text();
+            const json = JSON.parse(txt.substring(txt.indexOf('{'), txt.lastIndexOf('}')+1));
+            acData = json.table.rows.map((r,i) => {
+                const c = r.c;
                 return {
-                    id: i, villaNo: getVal(c, 0), lvr: getVal(c, 1), sitting: getVal(c, 2), office: getVal(c, 3),
-                    mbr1: getVal(c, 4), mbr2: getVal(c, 5), mbr3: getVal(c, 6), kids: getVal(c, 7),
-                    guest: getVal(c, 8), kitchen: getVal(c, 9), sq: getVal(c, 10), store: getVal(c, 11), patio: getVal(c, 12)
+                    id: i, v: getVal(c,0), l: getVal(c,1), si: getVal(c,2), o: getVal(c,3), m1: getVal(c,4),
+                    m2: getVal(c,5), m3: getVal(c,6), k: getVal(c,7), g: getVal(c,8), ki: getVal(c,9), sq: getVal(c,10), st: getVal(c,11), p: getVal(c,12)
                 };
-            }).filter(r => r.villaNo && !String(r.villaNo).toLowerCase().includes('villa'));
+            }).filter(x => x.v && !String(x.v).toLowerCase().includes('villa'));
         }
 
-        function getVal(cells, i) {
-            if (!cells || !cells[i]) return '';
-            const c = cells[i];
-            return c.f || c.v || '';
-        }
+        function renderCompound() {
+            // Renov Stats
+            document.getElementById('rTotal').innerText = renovData.length;
+            document.getElementById('rFull').innerText = renovData.filter(x=>isRenov(x.s,'full')).length;
+            document.getElementById('rHalf').innerText = renovData.filter(x=>isRenov(x.s,'half')).length;
+            document.getElementById('rProg').innerText = renovData.filter(x=>isRenov(x.s,'prog')).length;
+            document.getElementById('rNon').innerText = renovData.filter(x=>isRenov(x.s,'non')).length;
 
-        // Renovation Logic
-        function updateRenovationView() {
-            const full = renovationData.filter(i => isFullRenovated(i.status)).length;
-            const half = renovationData.filter(i => isHalfRenovated(i.status)).length;
-            const prog = renovationData.filter(i => isInProgress(i.status)).length;
-            const non = renovationData.filter(i => isNonRenovated(i.status)).length;
-            
-            document.getElementById('totalVillas').textContent = renovationData.length;
-            document.getElementById('fullRenovated').textContent = full;
-            document.getElementById('halfRenovated').textContent = half;
-            document.getElementById('inProgress').textContent = prog;
-            document.getElementById('nonRenovated').textContent = non;
-            
-            renderRenovationTable();
-            renderRenovationCards();
-        }
-
-        function filterRenovation(type) {
-            renderRenovationTable(type);
-            renderRenovationCards(type);
-        }
-
-        function renderRenovationTable(filterType = 'all') {
-            let data = renovationData;
-            if (filterType === 'full') data = renovationData.filter(i => isFullRenovated(i.status));
-            else if (filterType === 'half') data = renovationData.filter(i => isHalfRenovated(i.status));
-            else if (filterType === 'progress') data = renovationData.filter(i => isInProgress(i.status));
-            else if (filterType === 'non') data = renovationData.filter(i => isNonRenovated(i.status));
-
-            const tbody = document.getElementById('renovationTable');
-            tbody.innerHTML = data.map(i => `
-                <tr>
-                    <td>Villa ${i.villaNo}</td>
-                    <td><span class="status-badge ${getRenovStatusClass(i.status)}">${i.status || 'N/A'}</span></td>
-                    <td style="color: #e91e63; font-weight: 600;">${i.cost.toLocaleString()}</td>
-                    <td>${calcDuration(i.startDate, i.endDate) || '-'} days</td>
-                    <td>${i.dateRenovated || '-'}</td>
-                    <td>${i.remarks || '-'}</td>
-                    <td>${i.notes || '-'}</td>
-                </tr>
-            `).join('');
-        }
-
-        function renderRenovationCards(filterType = 'all') {
-            let data = renovationData;
-            if (filterType === 'full') data = renovationData.filter(i => isFullRenovated(i.status));
-            else if (filterType === 'half') data = renovationData.filter(i => isHalfRenovated(i.status));
-            else if (filterType === 'progress') data = renovationData.filter(i => isInProgress(i.status));
-            else if (filterType === 'non') data = renovationData.filter(i => isNonRenovated(i.status));
-
-            const container = document.getElementById('villaCards');
-            container.innerHTML = data.map(i => `
-                <div class="villa-card">
-                    <div class="villa-card-header ${getRenovHeaderClass(i.status)}">
-                        <h3>Villa ${i.villaNo}</h3>
-                    </div>
-                    <div style="padding: 15px;">
-                        <p><strong>Status:</strong> ${i.status}</p>
-                        <p><strong>Cost:</strong> ${i.cost.toLocaleString()}</p>
-                        <p><strong>Duration:</strong> ${calcDuration(i.startDate, i.endDate) || '-'} days</p>
-                        <p><strong>Notes:</strong> ${i.notes || '-'}</p>
-                    </div>
-                </div>
-            `).join('');
-        }
-
-        // AC Logic
-        function updateACView() {
-            let totalACs = 0, newACs = 0, oldACs = 0;
-            acData.forEach(villa => {
-                const rooms = [villa.lvr, villa.sitting, villa.office, villa.mbr1, villa.mbr2, villa.mbr3, villa.kids, villa.guest, villa.kitchen, villa.sq, villa.store, villa.patio];
-                rooms.forEach(status => {
-                    const s = String(status).toUpperCase().trim();
-                    if (s && s !== 'X') {
-                        totalACs++;
-                        if (s.includes('NEW')) newACs++;
-                        else if (s.includes('OLD')) oldACs++;
-                    }
+            // AC Stats
+            let tAc=0, nAc=0, oAc=0;
+            acData.forEach(d => {
+                [d.l,d.si,d.o,d.m1,d.m2,d.m3,d.k,d.g,d.ki,d.sq,d.st,d.p].forEach(v => {
+                    const s = String(v).toUpperCase();
+                    if(s && s!=='X') { tAc++; if(s.includes('NEW')) nAc++; else oAc++; }
                 });
             });
-            document.getElementById('totalACs').textContent = totalACs;
-            document.getElementById('totalNewACs').textContent = newACs;
-            document.getElementById('totalOldACs').textContent = oldACs;
-            document.getElementById('villasWithAC').textContent = acData.length;
-            
+            document.getElementById('aTotal').innerText = tAc;
+            document.getElementById('aNew').innerText = nAc;
+            document.getElementById('aOld').innerText = oAc;
+
+            renderRenovTable();
+            renderRenovCards();
             renderACTable();
             renderACCards();
         }
 
-        function renderACTable() {
-            const tbody = document.getElementById('acTable');
-            tbody.innerHTML = acData.map(i => `
+        function switchCompoundTab(t) {
+            document.getElementById('tabRenov').classList.toggle('active', t==='renovation');
+            document.getElementById('tabAC').classList.toggle('active', t==='ac');
+            document.getElementById('viewRenovation').classList.toggle('hidden', t!=='renovation');
+            document.getElementById('viewAC').classList.toggle('hidden', t!=='ac');
+        }
+
+        function toggleView(type, v) {
+            if(type==='renov') {
+                document.getElementById('renovTableContainer').classList.toggle('hidden', v!=='table');
+                document.getElementById('renovCardContainer').classList.toggle('hidden', v!=='cards');
+                document.getElementById('btnRenovTable').style.background = v==='table'?'#1e3a5f':'#e2e8f0';
+                document.getElementById('btnRenovTable').style.color = v==='table'?'white':'#333';
+                document.getElementById('btnRenovCards').style.background = v==='cards'?'#1e3a5f':'#e2e8f0';
+                document.getElementById('btnRenovCards').style.color = v==='cards'?'white':'#333';
+            } else {
+                document.getElementById('acTableContainer').classList.toggle('hidden', v!=='table');
+                document.getElementById('acCardContainer').classList.toggle('hidden', v!=='cards');
+                document.getElementById('btnACTable').style.background = v==='table'?'#1e3a5f':'#e2e8f0';
+                document.getElementById('btnACTable').style.color = v==='table'?'white':'#333';
+                document.getElementById('btnACCards').style.background = v==='cards'?'#1e3a5f':'#e2e8f0';
+                document.getElementById('btnACCards').style.color = v==='cards'?'white':'#333';
+            }
+        }
+
+        function filterRenov(type) {
+            compoundFilter = 'r'+type;
+            renderRenovTable();
+            renderRenovCards();
+        }
+
+        function filterAC(type) {
+            compoundFilter = 'a'+type;
+            renderACTable();
+            renderACCards();
+        }
+
+        // Render Renovation
+        function renderRenovTable() {
+            let data = renovData;
+            if(compoundFilter === 'rfull') data = renovData.filter(x=>isRenov(x.s,'full'));
+            else if(compoundFilter === 'rhalf') data = renovData.filter(x=>isRenov(x.s,'half'));
+            else if(compoundFilter === 'rprog') data = renovData.filter(x=>isRenov(x.s,'prog'));
+            else if(compoundFilter === 'rnon') data = renovData.filter(x=>isRenov(x.s,'non'));
+
+            document.getElementById('renovTableBody').innerHTML = data.map(x => `
                 <tr>
-                    <td>Villa ${i.villaNo}</td>
-                    ${renderACCell(i.lvr)}${renderACCell(i.sitting)}${renderACCell(i.office)}
-                    ${renderACCell(i.mbr1)}${renderACCell(i.mbr2)}${renderACCell(i.mbr3)}
-                    ${renderACCell(i.kids)}${renderACCell(i.guest)}${renderACCell(i.kitchen)}
-                    ${renderACCell(i.sq)}${renderACCell(i.store)}${renderACCell(i.patio)}
-                    <td style="text-align:center; font-weight:bold;">${getVillaTotal(i)}</td>
+                    <td>Villa ${x.v}</td>
+                    <td><span class="badge ${getRenovBadge(x.s)}">${x.s||'N/A'}</span></td>
+                    <td>${x.cost}</td>
+                    <td>${calcDur(x.sD, x.eD)} days</td>
+                    <td>${x.dR||'-'}</td>
+                    <td>${x.n||'-'}</td>
                 </tr>
             `).join('');
         }
 
-        function renderACCell(val) {
-            const s = String(val).toUpperCase().trim();
-            const color = s.includes('NEW') ? '#27ae60' : (s.includes('OLD') ? '#f39c12' : '#ccc');
-            return `<td style="text-align:center; color: ${s === 'X' ? '#ccc' : color}; font-weight: bold;">${val}</td>`;
-        }
+        function renderRenovCards() {
+             let data = renovData;
+            if(compoundFilter === 'rfull') data = renovData.filter(x=>isRenov(x.s,'full'));
+            else if(compoundFilter === 'rhalf') data = renovData.filter(x=>isRenov(x.s,'half'));
+            else if(compoundFilter === 'rprog') data = renovData.filter(x=>isRenov(x.s,'prog'));
+            else if(compoundFilter === 'rnon') data = renovData.filter(x=>isRenov(x.s,'non'));
 
-        function renderACCards() {
-            const container = document.getElementById('acCards');
-            container.innerHTML = acData.map(i => `
-                <div class="ac-card">
-                    <div class="ac-card-header">
-                        <h3>Villa ${i.villaNo}</h3>
-                    </div>
-                    <div style="padding: 15px;">
-                        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; text-align: center;">
-                            ${renderACRoomCard('LVR', i.lvr)}${renderACRoomCard('Sit', i.sitting)}${renderACRoomCard('Off', i.office)}
-                            ${renderACRoomCard('M1', i.mbr1)}${renderACRoomCard('M2', i.mbr2)}${renderACRoomCard('M3', i.mbr3)}
-                            ${renderACRoomCard('Kid', i.kids)}${renderACRoomCard('Gst', i.guest)}${renderACRoomCard('Kit', i.kitchen)}
-                            ${renderACRoomCard('SQ', i.sq)}${renderACRoomCard('St', i.store)}${renderACRoomCard('Pat', i.patio)}
-                        </div>
-                        <div style="margin-top:10px; border-top: 1px solid #eee; padding-top: 5px; text-align: right; font-weight: bold;">Total: ${getVillaTotal(i)}</div>
+            document.getElementById('renovCardContainer').innerHTML = data.map(x => `
+                <div class="villa-card">
+                    <div class="card-header" style="background:${getRenovColor(x.s)}">Villa ${x.v}</div>
+                    <div class="card-body">
+                        <div class="card-row"><span>Status:</span><b>${x.s}</b></div>
+                        <div class="card-row"><span>Cost:</span><b>${x.cost}</b></div>
+                        <div class="card-row"><span>Duration:</span><b>${calcDur(x.sD, x.eD)} days</b></div>
+                        <div class="card-row"><span>Notes:</span><span>${x.n||'-'}</span></div>
                     </div>
                 </div>
             `).join('');
         }
 
-        function renderACRoomCard(name, val) {
-            const s = String(val).toUpperCase().trim();
-            return `<div style="background:#f9f9f9; padding:5px; border-radius:4px;"><div style="font-size:0.6rem; color:#999;">${name}</div><div style="font-size:0.8rem; font-weight:bold; color:${s.includes('NEW')?'#27ae60':(s.includes('OLD')?'#f39c12':'#ccc')}">${val}</div></div>`;
+        // Render AC
+        function renderACTable() {
+            let data = acData;
+            // Simple filter: if looking for New/Old, filter rows
+            if(compoundFilter === 'anew') data = acData.filter(x => hasACType(x, 'NEW'));
+            else if(compoundFilter === 'aold') data = acData.filter(x => hasACType(x, 'OLD'));
+
+            document.getElementById('acTableBody').innerHTML = data.map(x => `
+                <tr>
+                    <td>Villa ${x.v}</td>
+                    ${renderCell(x.l)}${renderCell(x.si)}${renderCell(x.o)}
+                    ${renderCell(x.m1)}${renderCell(x.m2)}${renderCell(x.m3)}
+                    ${renderCell(x.k)}${renderCell(x.g)}${renderCell(x.ki)}
+                    ${renderCell(x.sq)}${renderCell(x.st)}${renderCell(x.p)}
+                    <td style="text-align:center; font-weight:bold;">${getTotalAC(x)}</td>
+                </tr>
+            `).join('');
         }
 
-        function getVillaTotal(villa) {
-            const rooms = [villa.lvr, villa.sitting, villa.office, villa.mbr1, villa.mbr2, villa.mbr3, villa.kids, villa.guest, villa.kitchen, villa.sq, villa.store, villa.patio];
-            return rooms.filter(r => r && r !== 'X').length;
+        function renderACCards() {
+            let data = acData;
+            if(compoundFilter === 'anew') data = acData.filter(x => hasACType(x, 'NEW'));
+            else if(compoundFilter === 'aold') data = acData.filter(x => hasACType(x, 'OLD'));
+
+            document.getElementById('acCardContainer').innerHTML = data.map(x => `
+                <div class="villa-card">
+                    <div class="card-header" style="background:#0ea5e9">Villa ${x.v}</div>
+                    <div class="card-body">
+                        <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:5px; text-align:center;">
+                            ${renderRoom('L',x.l)}${renderRoom('S',x.si)}${renderRoom('O',x.o)}${renderRoom('M1',x.m1)}
+                            ${renderRoom('M2',x.m2)}${renderRoom('M3',x.m3)}${renderRoom('K',x.k)}${renderRoom('G',x.g)}
+                            ${renderRoom('Ki',x.ki)}${renderRoom('Sq',x.sq)}${renderRoom('St',x.st)}${renderRoom('Pt',x.p)}
+                        </div>
+                        <div style="margin-top:10px; text-align:right; font-weight:bold;">Total: ${getTotalAC(x)}</div>
+                    </div>
+                </div>
+            `).join('');
         }
 
         // Helpers
-        function isFullRenovated(s) { return s && !s.toLowerCase().includes('non') && !s.toLowerCase().includes('half') && !s.toLowerCase().includes('under') && (s.toLowerCase().includes('full') || s.toLowerCase().includes('renovated')); }
-        function isHalfRenovated(s) { return s && String(s).toLowerCase().includes('half'); }
-        function isInProgress(s) { return s && !String(s).toLowerCase().includes('half') && (String(s).toLowerCase().includes('under') || String(s).toLowerCase().includes('progress')); }
-        function isNonRenovated(s) { return !isFullRenovated(s) && !isHalfRenovated(s) && !isInProgress(s); }
-        function getRenovStatusClass(s) { if(isHalfRenovated(s)) return 'status-half-renovated'; if(isInProgress(s)) return 'status-in-progress'; if(isFullRenovated(s)) return 'status-full-renovated'; return 'status-non-renovated'; }
-        function getRenovHeaderClass(s) { if(isHalfRenovated(s)) return 'status-half-renovated'; if(isInProgress(s)) return 'status-in-progress'; if(isFullRenovated(s)) return 'status-full-renovated'; return 'status-non-renovated'; }
-        function calcDuration(start, end) { if(!start) return null; const s = new Date(start); const e = end ? new Date(end) : new Date(); if(isNaN(s)) return null; return Math.max(0, Math.ceil((e - s) / (1000 * 60 * 60 * 24))); }
-        
-        function switchTab(tab) {
-            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-            if(tab === 'renovation') { document.querySelectorAll('.tab-btn')[0].classList.add('active'); document.getElementById('renovationTab').classList.add('active'); }
-            else { document.querySelectorAll('.tab-btn')[1].classList.add('active'); document.getElementById('acTab').classList.add('active'); }
+        function getVal(c,i) { if(!c||!c[i]) return ''; return c[i].f||c[i].v||''; }
+        function parseCSV(l) { const v=[]; let c='', q=false; for(let ch of l){ if(ch==='"') q=!q; else if(ch===','&&!q) { v.push(c.trim().replace(/^"|"$/g,'')); c=''; } else c+=ch; } v.push(c.trim().replace(/^"|"$/g,'')); return v; }
+        function isRenov(s,t) { s=String(s).toLowerCase(); if(t==='full') return s.includes('full')||s.includes('renovated')&&!s.includes('half')&&!s.includes('under'); if(t==='half') return s.includes('half'); if(t==='prog') return s.includes('under')||s.includes('progress'); return !isRenov(s,'full')&&!isRenov(s,'half')&&!isRenov(s,'prog'); }
+        function getRenovBadge(s) { if(isRenov(s,'full')) return 'badge-completed'; if(isRenov(s,'prog')) return 'badge-progress'; if(isRenov(s,'half')) return 'badge-pending'; return 'badge-pending'; }
+        function getRenovColor(s) { if(isRenov(s,'full')) return '#22c55e'; if(isRenov(s,'prog')) return '#eab308'; if(isRenov(s,'half')) return '#a855f7'; return '#ef4444'; }
+        function calcDur(s,e) { if(!s) return 0; return Math.ceil((new Date(e||new Date())-new Date(s))/(86400000)); }
+        function renderCell(val) { const s=String(val).toUpperCase(); const c=s.includes('NEW')?'#22c55e':(s.includes('OLD')?'#eab308':'#94a3b8'); return `<td style="text-align:center; color:${c}; font-weight:bold;">${val}</td>`; }
+        function renderRoom(n,v) { const s=String(v).toUpperCase(); const c=s.includes('NEW')?'#22c55e':(s.includes('OLD')?'#eab308':'#94a3b8'); return `<div style="background:#f1f5f9; padding:5px; border-radius:4px;"><div style="font-size:0.7rem;">${n}</div><div style="font-size:0.8rem; font-weight:bold; color:${c}">${v}</div></div>`; }
+        function getTotalAC(x) { return [x.l,x.si,x.o,x.m1,x.m2,x.m3,x.k,x.g,x.ki,x.sq,x.st,x.p].filter(v=>v&&v!=='X').length; }
+        function hasACType(x, type) { return [x.l,x.si,x.o,x.m1,x.m2,x.m3,x.k,x.g,x.ki,x.sq,x.st,x.p].some(v=>String(v).toUpperCase().includes(type)); }
+        function handleCompoundSearch() {
+            const q = document.getElementById('compoundSearch').value.toLowerCase();
+            // Simple row hiding for table
+            document.querySelectorAll('#renovTableBody tr, #acTableBody tr').forEach(r => r.style.display = r.innerText.toLowerCase().includes(q)?'':'none');
+            // Simple card hiding
+            document.querySelectorAll('.villa-card').forEach(c => c.style.display = c.innerText.toLowerCase().includes(q)?'block':'none');
         }
-        function switchView(view) { document.getElementById('tableView').classList.toggle('active', view==='table'); document.getElementById('cardsView').classList.toggle('active', view==='cards'); }
-        function switchACView(view) { document.getElementById('acTableView').classList.toggle('active', view==='table'); document.getElementById('acCardsView').classList.toggle('active', view==='cards'); }
-        function filterAC(type) { /* Simplified for merge - shows all */ }
-        function handleGlobalSearch() { /* Simplified - would require full DOM search implementation */ }
-        function exportData() { alert("Exporting... (Functionality preserved in logic)"); }
     </script>
 </body>
 </html>
