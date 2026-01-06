@@ -38,6 +38,10 @@
         .login-box { background: white; padding: 40px; border-radius: 15px; text-align: center; width: 350px; box-shadow: 0 20px 50px rgba(0,0,0,0.3); }
         .login-input { width: 100%; padding: 12px; margin: 15px 0; border: 2px solid #ddd; border-radius: 8px; font-size: 1rem; }
         .login-btn { width: 100%; padding: 12px; background: #1e3a5f; color: white; border: none; border-radius: 8px; font-size: 1rem; font-weight: bold; cursor: pointer; }
+        
+        /* Password Eye Icon Style */
+        .password-wrapper { position: relative; width: 100%; }
+        .password-wrapper i { position: absolute; right: 15px; top: 50%; transform: translateY(-50%); cursor: pointer; color: #666; }
 
         /* --- SHARED COMPONENTS --- */
         .stat-card {
@@ -75,6 +79,13 @@
         .card-body { padding: 15px; }
         .card-row { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 0.9rem; border-bottom: 1px dashed #eee; padding-bottom: 5px; }
 
+        /* Export Button Style */
+        .export-btn {
+            background: #10b981; color: white; padding: 10px 20px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer;
+            display: inline-flex; align-items: center; gap: 8px; transition: background 0.2s;
+        }
+        .export-btn:hover { background: #059669; }
+
     </style>
 </head>
 <body>
@@ -85,7 +96,10 @@
             <h2 style="margin-top:0;">Villa Master Portal</h2>
             <p style="color:#666; font-size: 0.9rem;">Secure Access</p>
             <form onsubmit="handleLogin(event)">
-                <input type="password" id="masterPassword" class="login-input" placeholder="Enter Password" required>
+                <div class="password-wrapper">
+                    <input type="password" id="masterPassword" class="login-input" placeholder="Enter Password" required>
+                    <i class="fas fa-eye" id="togglePassword" onclick="togglePasswordVisibility()"></i>
+                </div>
                 <button type="submit" class="login-btn">LOGIN</button>
             </form>
             <p id="loginError" style="color:red; display:none; margin-top:10px;">Incorrect Password</p>
@@ -119,6 +133,8 @@
                     </select>
                     <button onclick="resetTicketDashboard()" style="background: #8b5cf6; color: white; border: none; padding: 8px 15px; border-radius: 6px; cursor: pointer;">🏠 Home</button>
                     <button onclick="loadTicketData()" style="background: #3b82f6; color: white; border: none; padding: 8px 15px; border-radius: 6px; cursor: pointer;">Refresh</button>
+                    <!-- EXPORT TICKETS -->
+                    <button onclick="exportTicketData()" class="export-btn"><i class="fas fa-file-excel"></i> Export</button>
                 </div>
             </div>
 
@@ -141,10 +157,7 @@
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-top: 15px;">
                     <input type="text" id="mrfInput" placeholder="MRF No" class="login-input" style="margin:0;">
                     <input type="text" id="villaInput" placeholder="Villa/Flat" class="login-input" style="margin:0;">
-                    <select id="systemInput" class="login-input" style="margin:0;">
-                        <option value="">All Systems</option>
-                        <!-- DYNAMIC SYSTEMS ADDED HERE -->
-                    </select>
+                    <select id="systemInput" class="login-input" style="margin:0;"><option value="">All Systems</option></select>
                     <select id="statusInput" class="login-input" style="margin:0;">
                         <option value="">All Status</option><option value="pending">Pending</option><option value="progress">In Progress</option><option value="completed">Completed</option>
                     </select>
@@ -170,9 +183,13 @@
         <!-- APP 2: COMPOUND -->
         <div id="app-compound" class="hidden">
             <!-- Sub-Nav -->
-            <div style="background: white; padding: 10px; border-radius: 10px; margin-bottom: 20px; display: flex; gap: 10px;">
-                <button id="tabRenov" class="nav-tab active" onclick="switchCompoundTab('renovation')">Renovation Status</button>
-                <button id="tabAC" class="nav-tab" onclick="switchCompoundTab('ac')">AC Replacement</button>
+            <div style="background: white; padding: 10px; border-radius: 10px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center;">
+                <div style="display: flex; gap: 10px;">
+                    <button id="tabRenov" class="nav-tab active" onclick="switchCompoundTab('renovation')">Renovation Status</button>
+                    <button id="tabAC" class="nav-tab" onclick="switchCompoundTab('ac')">AC Replacement</button>
+                </div>
+                <!-- EXPORT COMPOUND DATA -->
+                <button onclick="exportCompoundData()" class="export-btn"><i class="fas fa-file-excel"></i> Export Data</button>
             </div>
 
             <!-- SEARCH BAR -->
@@ -223,7 +240,6 @@
                         <thead>
                             <tr>
                                 <th>VILLA</th>
-                                <!-- FULL NAMES HERE -->
                                 <th>LIVING ROOM</th><th>SITTING</th><th>OFFICE</th>
                                 <th>MASTER BEDROOM 1</th><th>MASTER BEDROOM 2</th><th>MASTER BEDROOM 3</th>
                                 <th>KIDS ROOM</th><th>GUEST ROOM</th><th>KITCHEN</th>
@@ -257,6 +273,22 @@
 
         // --- INIT ---
         if(sessionStorage.getItem('auth') === 'true') showApp();
+
+        // --- 1. EYE ICON FUNCTION ---
+        function togglePasswordVisibility() {
+            const passwordInput = document.getElementById('masterPassword');
+            const toggleIcon = document.getElementById('togglePassword');
+            
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                toggleIcon.classList.remove('fa-eye');
+                toggleIcon.classList.add('fa-eye-slash');
+            } else {
+                passwordInput.type = 'password';
+                toggleIcon.classList.remove('fa-eye-slash');
+                toggleIcon.classList.add('fa-eye');
+            }
+        }
 
         function handleLogin(e) {
             e.preventDefault();
@@ -319,7 +351,7 @@
                 const lines = csv.split('\n');
                 
                 allTickets = [];
-                const systemSet = new Set(); // FIX: Collect unique systems
+                const systemSet = new Set(); 
 
                 // Skip Header
                 for(let i=1; i<lines.length; i++) {
@@ -335,7 +367,7 @@
                     }
                 }
                 
-                // FIX: Populate Dropdown
+                // Populate Dropdown
                 const sysSelect = document.getElementById('systemInput');
                 sysSelect.innerHTML = '<option value="">All Systems</option>' + 
                     Array.from(systemSet).sort().map(s => `<option value="${s}">${s}</option>`).join('');
@@ -429,10 +461,23 @@
 
             // Table
             const tbody = document.getElementById('ticketTableBody');
-            if(filtered.length === 0) {
+            
+            // --- MODIFICATION: SHOW ONLY LAST 10 TICKETS ON HOME ---
+            let displayData = filtered;
+            const isSearching = f.mrf || f.villa || f.system || f.status || f.details;
+            
+            if (!isSearching) {
+                // Reverse to get newest first, then take last 10
+                displayData = [...filtered].reverse().slice(0, 10);
+            } else {
+                // If searching, show all results (up to a limit for performance, e.g. 100)
+                displayData = [...filtered].reverse().slice(0, 100);
+            }
+
+            if(displayData.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">No tickets found</td></tr>';
             } else {
-                tbody.innerHTML = filtered.map(t => `
+                tbody.innerHTML = displayData.map(t => `
                     <tr>
                         <td>${t.date}</td>
                         <td style="font-weight:bold; color:#3b82f6;">${t.mrf}</td>
@@ -449,6 +494,17 @@
             if(s.toLowerCase().includes('completed')) return 'badge-completed';
             if(s.toLowerCase().includes('progress')) return 'badge-progress';
             return 'badge-pending';
+        }
+
+        // --- EXPORT FUNCTION FOR TICKETS ---
+        function exportTicketData() {
+            const ws = XLSX.utils.json_to_sheet(allTickets.map(t => ({
+                Date: t.date, Time: t.time, 'MRF No': t.mrf, Villa: t.villa, 
+                System: t.system, Details: t.details, Status: t.status
+            })));
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Tickets");
+            XLSX.writeFile(wb, `Maintenance_Report_${ticketYear}.xlsx`);
         }
 
         // ============================================
@@ -629,6 +685,23 @@
             `).join('');
         }
 
+        // --- EXPORT FUNCTION FOR COMPOUND ---
+        function exportCompoundData() {
+            const ws1 = XLSX.utils.json_to_sheet(renovData.map(x => ({
+                'Villa No': x.v, 'Status': x.s, 'Cost': x.cost, 'Duration (Days)': calcDur(x.sD, x.eD), 'Notes': x.n
+            })));
+            const ws2 = XLSX.utils.json_to_sheet(acData.map(x => ({
+                'Villa No': x.v, 'Living Room': x.l, 'Sitting': x.si, 'Office': x.o,
+                'Master 1': x.m1, 'Master 2': x.m2, 'Master 3': x.m3, 'Kids': x.k,
+                'Guest': x.g, 'Kitchen': x.ki, 'SQ': x.sq, 'Store': x.st, 'Patio': x.p,
+                'Total ACs': getTotalAC(x)
+            })));
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws1, "Renovation");
+            XLSX.utils.book_append_sheet(wb, ws2, "AC Replacement");
+            XLSX.writeFile(wb, `Compound_Report_${new Date().toISOString().split('T')[0]}.xlsx`);
+        }
+
         // Helpers
         function getVal(c,i) { if(!c||!c[i]) return ''; return c[i].f||c[i].v||''; }
         function parseCSV(l) { const v=[]; let c='', q=false; for(let ch of l){ if(ch==='"') q=!q; else if(ch===','&&!q) { v.push(c.trim().replace(/^"|"$/g,'')); c=''; } else c+=ch; } v.push(c.trim().replace(/^"|"$/g,'')); return v; }
@@ -650,9 +723,7 @@
         function hasACType(x, type) { return [x.l,x.si,x.o,x.m1,x.m2,x.m3,x.k,x.g,x.ki,x.sq,x.st,x.p].some(v=>String(v).toUpperCase().includes(type)); }
         function handleCompoundSearch() {
             const q = document.getElementById('compoundSearch').value.toLowerCase();
-            // Simple row hiding for table
             document.querySelectorAll('#renovTableBody tr, #acTableBody tr').forEach(r => r.style.display = r.innerText.toLowerCase().includes(q)?'':'none');
-            // Simple card hiding
             document.querySelectorAll('.villa-card').forEach(c => c.style.display = c.innerText.toLowerCase().includes(q)?'block':'none');
         }
     </script>
