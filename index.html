@@ -269,7 +269,7 @@
         
         let renovData = [];
         let acData = [];
-        let compoundFilter = 'all';
+        let compoundFilter = 'all'; // Stores current filter for compound
 
         // --- INIT ---
         if(sessionStorage.getItem('auth') === 'true') showApp();
@@ -387,12 +387,12 @@
             };
             
             const html = Object.keys(sysMap).map(sys => {
-                const count = pending.filter(t => t.system === sys).length;
+                theCount = pending.filter(t => t.system === sys).length;
                 return `
                     <div class="stat-card sys-${sysMap[sys].c}" onclick="applySystemFilter('${sys}')">
                         <div class="stat-icon" style="background: #ccc; color: #555;">${sysMap[sys].i}</div>
                         <div>
-                            <h3 style="margin:0; font-size:1.5rem;">${count}</h3>
+                            <h3 style="margin:0; font-size:1.5rem;">${theCount}</h3>
                             <p style="margin:0; font-size:0.9rem;">${sys}</p>
                         </div>
                     </div>
@@ -461,16 +461,12 @@
 
             // Table
             const tbody = document.getElementById('ticketTableBody');
-            
-            // --- MODIFICATION: SHOW ONLY LAST 10 TICKETS ON HOME ---
             let displayData = filtered;
             const isSearching = f.mrf || f.villa || f.system || f.status || f.details;
             
             if (!isSearching) {
-                // Reverse to get newest first, then take last 10
                 displayData = [...filtered].reverse().slice(0, 10);
             } else {
-                // If searching, show all results (up to a limit for performance, e.g. 100)
                 displayData = [...filtered].reverse().slice(0, 100);
             }
 
@@ -496,14 +492,44 @@
             return 'badge-pending';
         }
 
-        // --- EXPORT FUNCTION FOR TICKETS ---
+        // --- EXPORT FUNCTION FOR TICKETS (FILTERED) ---
         function exportTicketData() {
-            const ws = XLSX.utils.json_to_sheet(allTickets.map(t => ({
+            // Re-calculate filtered data based on CURRENT inputs
+            const f = ticketFilters;
+            const dataToExport = allTickets.filter(t => {
+                return (!f.mrf || t.mrf.toLowerCase().includes(f.mrf.toLowerCase())) &&
+                       (!f.villa || t.villa.toLowerCase().includes(f.villa.toLowerCase())) &&
+                       (!f.system || t.system === f.system) &&
+                       (!f.status || t.status.toLowerCase().includes(f.status.toLowerCase())) &&
+                       (!f.details || t.details.toLowerCase().includes(f.details.toLowerCase()));
+            }).reverse(); // Export newest first
+
+            if (dataToExport.length === 0) {
+                alert("No data to export based on your filters.");
+                return;
+            }
+
+            // Create Sheet
+            const ws = XLSX.utils.json_to_sheet(dataToExport.map(t => ({
                 Date: t.date, Time: t.time, 'MRF No': t.mrf, Villa: t.villa, 
                 System: t.system, Details: t.details, Status: t.status
             })));
+            
+            // Styling for Clean Print
+            const range = XLSX.utils.decode_range(ws['!ref']);
+            for(let C = range.s.c; C <= range.e.c; ++C) {
+                const address = XLSX.utils.encode_col(C) + "1"; // Header row
+                if(!ws[address]) continue;
+                ws[address].s = {
+                    font: { bold: true, color: { rgb: "FFFFFF" } },
+                    fill: { fgColor: { rgb: "1E3A5F" } }, // Dark Blue Header
+                    alignment: { horizontal: "center" }
+                };
+            }
+            ws['!cols'] = Object.keys(dataToExport[0] || {}).map(() => ({ wch: 20 })); // Auto width
+
             const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, "Tickets");
+            XLSX.utils.book_append_sheet(wb, ws, "Report");
             XLSX.writeFile(wb, `Maintenance_Report_${ticketYear}.xlsx`);
         }
 
@@ -590,7 +616,7 @@
                 document.getElementById('btnACTable').style.background = v==='table'?'#1e3a5f':'#e2e8f0';
                 document.getElementById('btnACTable').style.color = v==='table'?'white':'#333';
                 document.getElementById('btnACCards').style.background = v==='cards'?'#1e3a5f':'#e2e8f0';
-                document.getElementById('btnACCards').style.color = v==='cards'?'white':'#333';
+                document.getElementById('acACCards').style.color = v==='cards'?'white':'#333';
             }
         }
 
@@ -604,6 +630,66 @@
             compoundFilter = 'a'+type;
             renderACTable();
             renderACCards();
+        }
+
+        // --- EXPORT FUNCTION FOR COMPOUND (FILTERED) ---
+        function exportCompoundData() {
+            const isRenovTab = !document.getElementById('viewRenovation').classList.contains('hidden');
+            const wb = XLSX.utils.book_new();
+
+            // 1. Export Renovation (Based on Filter)
+            if (isRenovTab) {
+                let data = renovData;
+                if(compoundFilter === 'rfull') data = renovData.filter(x=>isRenov(x.s,'full'));
+                else if(compoundFilter === 'rhalf') data = renovData.filter(x=>isRenov(x.s,'half'));
+                else if(compoundFilter === 'rprog') data = renovData.filter(x=>isRenov(x.s,'prog'));
+                else if(compoundFilter === 'rnon') data = renovData.filter(x=>isRenov(x.s,'non'));
+
+                if(data.length === 0) { alert("No Renovation data to export."); return; }
+
+                const ws = XLSX.utils.json_to_sheet(data.map(x => ({
+                    'Villa No': x.v, 'Status': x.s, 'Cost': x.cost, 'Duration (Days)': calcDur(x.sD, x.eD), 'Notes': x.n
+                })));
+
+                // Styling
+                const range = XLSX.utils.decode_range(ws['!ref']);
+                for(let C = range.s.c; C <= range.e.c; ++C) {
+                    const address = XLSX.utils.encode_col(C) + "1";
+                    if(!ws[address]) continue;
+                    ws[address].s = { font: { bold: true }, fill: { fgColor: { rgb: "1E3A5F" } }, alignment: { horizontal: "center" } };
+                }
+                ws['!cols'] = [{wch:15}, {wch:20}, {wch:15}, {wch:15}, {wch:30}];
+
+                XLSX.utils.book_append_sheet(wb, ws, "Renovation Report");
+            } 
+            // 2. Export AC (Based on Filter)
+            else {
+                let data = acData;
+                if(compoundFilter === 'anew') data = acData.filter(x => hasACType(x, 'NEW'));
+                else if(compoundFilter === 'aold') data = acData.filter(x => hasACType(x, 'OLD'));
+
+                if(data.length === 0) { alert("No AC data to export."); return; }
+
+                const ws = XLSX.utils.json_to_sheet(data.map(x => ({
+                    'Villa No': x.v, 'Living Room': x.l, 'Sitting': x.si, 'Office': x.o,
+                    'Master 1': x.m1, 'Master 2': x.m2, 'Master 3': x.m3, 'Kids': x.k,
+                    'Guest': x.g, 'Kitchen': x.ki, 'SQ': x.sq, 'Store': x.st, 'Patio': x.p,
+                    'Total ACs': getTotalAC(x)
+                })));
+
+                // Styling
+                const range = XLSX.utils.decode_range(ws['!ref']);
+                for(let C = range.s.c; C <= range.e.c; ++C) {
+                    const address = XLSX.utils.encode_col(C) + "1";
+                    if(!ws[address]) continue;
+                    ws[address].s = { font: { bold: true }, fill: { fgColor: { rgb: "1E3A5F" } }, alignment: { horizontal: "center" } };
+                }
+                ws['!cols'] = Object.keys(data[0]).map(() => ({ wch: 15 }));
+
+                XLSX.utils.book_append_sheet(wb, ws, "AC Report");
+            }
+
+            XLSX.writeFile(wb, `Compound_Report_${new Date().toISOString().split('T')[0]}.xlsx`);
         }
 
         // Render Renovation
@@ -683,23 +769,6 @@
                     </div>
                 </div>
             `).join('');
-        }
-
-        // --- EXPORT FUNCTION FOR COMPOUND ---
-        function exportCompoundData() {
-            const ws1 = XLSX.utils.json_to_sheet(renovData.map(x => ({
-                'Villa No': x.v, 'Status': x.s, 'Cost': x.cost, 'Duration (Days)': calcDur(x.sD, x.eD), 'Notes': x.n
-            })));
-            const ws2 = XLSX.utils.json_to_sheet(acData.map(x => ({
-                'Villa No': x.v, 'Living Room': x.l, 'Sitting': x.si, 'Office': x.o,
-                'Master 1': x.m1, 'Master 2': x.m2, 'Master 3': x.m3, 'Kids': x.k,
-                'Guest': x.g, 'Kitchen': x.ki, 'SQ': x.sq, 'Store': x.st, 'Patio': x.p,
-                'Total ACs': getTotalAC(x)
-            })));
-            const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws1, "Renovation");
-            XLSX.utils.book_append_sheet(wb, ws2, "AC Replacement");
-            XLSX.writeFile(wb, `Compound_Report_${new Date().toISOString().split('T')[0]}.xlsx`);
         }
 
         // Helpers
