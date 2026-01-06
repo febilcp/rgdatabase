@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Villa Master Portal - Fixed</title>
+    <title>Villa Master Portal - Final</title>
     
     <!-- Libraries -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -50,7 +50,7 @@
         /* Table Styles */
         .table-container { background: white; border-radius: 10px; overflow-x: auto; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-top: 20px; }
         table { width: 100%; border-collapse: collapse; min-width: 900px; }
-        th { background: #1e3a5f; color: white; padding: 12px 15px; text-align: left; font-size: 0.9rem; }
+        th { background: #1e3a5f; color: white; padding: 12px 15px; text-align: left; font-size: 0.85rem; white-space: nowrap; }
         td { padding: 12px 15px; border-bottom: 1px solid #eee; font-size: 0.9rem; }
         tr:hover { background: #f8fafc; }
 
@@ -69,7 +69,7 @@
         .sys-gray { border-left-color: #6b7280; background: #f3f4f6; }
 
         /* Card Styles (App 2) */
-        .card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; margin-top: 20px; }
+        .card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; margin-top: 20px; }
         .villa-card { background: white; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
         .card-header { padding: 15px; color: white; font-weight: bold; display: flex; justify-content: space-between; }
         .card-body { padding: 15px; }
@@ -127,7 +127,7 @@
                 <!-- Filled by JS -->
             </div>
 
-            <!-- Pending by System (FIXED) -->
+            <!-- Pending by System -->
             <div id="systemPendingArea" style="background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-top: 20px;">
                 <h3 style="margin-top:0; color: #1e3a5f;">⚙️ Pending Work by System</h3>
                 <div id="systemGrid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin-top: 15px;">
@@ -135,17 +135,19 @@
                 </div>
             </div>
 
-            <!-- Filters (FIXED: Added Details Search) -->
+            <!-- Filters -->
             <div style="background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-top: 20px;">
                 <h3 style="margin-top:0;">🔍 Search & Filter</h3>
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-top: 15px;">
                     <input type="text" id="mrfInput" placeholder="MRF No" class="login-input" style="margin:0;">
                     <input type="text" id="villaInput" placeholder="Villa/Flat" class="login-input" style="margin:0;">
-                    <select id="systemInput" class="login-input" style="margin:0;"><option value="">All Systems</option></select>
+                    <select id="systemInput" class="login-input" style="margin:0;">
+                        <option value="">All Systems</option>
+                        <!-- DYNAMIC SYSTEMS ADDED HERE -->
+                    </select>
                     <select id="statusInput" class="login-input" style="margin:0;">
                         <option value="">All Status</option><option value="pending">Pending</option><option value="progress">In Progress</option><option value="completed">Completed</option>
                     </select>
-                    <!-- FIXED: Added Details Search Here -->
                     <input type="text" id="detailsInput" placeholder="Search Details" class="login-input" style="margin:0;">
                 </div>
                 <div style="margin-top: 15px; display: flex; gap: 10px;">
@@ -216,7 +218,22 @@
                 </div>
 
                 <!-- AC Data -->
-                <div id="acTableContainer" class="table-container"><table><thead><tr><th>Villa</th><th>LVR</th><th>Sit</th><th>Off</th><th>M1</th><th>M2</th><th>M3</th><th>Kid</th><th>Gst</th><th>Kit</th><th>SQ</th><th>St</th><th>Pat</th><th>Total</th></tr></thead><tbody id="acTableBody"></tbody></table></div>
+                <div id="acTableContainer" class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>VILLA</th>
+                                <!-- FULL NAMES HERE -->
+                                <th>LIVING ROOM</th><th>SITTING</th><th>OFFICE</th>
+                                <th>MASTER BEDROOM 1</th><th>MASTER BEDROOM 2</th><th>MASTER BEDROOM 3</th>
+                                <th>KIDS ROOM</th><th>GUEST ROOM</th><th>KITCHEN</th>
+                                <th>SQ (STORE)</th><th>STORE</th><th>PATIO</th>
+                                <th>TOTAL QTY</th>
+                            </tr>
+                        </thead>
+                        <tbody id="acTableBody"></tbody>
+                    </table>
+                </div>
                 <div id="acCardContainer" class="card-grid"></div>
             </div>
         </div>
@@ -302,19 +319,28 @@
                 const lines = csv.split('\n');
                 
                 allTickets = [];
+                const systemSet = new Set(); // FIX: Collect unique systems
+
                 // Skip Header
                 for(let i=1; i<lines.length; i++) {
                     const vals = parseCSV(lines[i]);
                     if(vals[2]) { // Has MRF
+                        const system = vals[4] || 'Other';
                         allTickets.push({
                             date: vals[0], time: vals[1], mrf: vals[2], villa: vals[3], 
-                            system: vals[4], rec: vals[5], details: vals[6], intBy: vals[7],
+                            system: system, rec: vals[5], details: vals[6], intBy: vals[7],
                             actBy: vals[8], actDate: vals[9], status: vals[10] || 'Pending'
                         });
+                        systemSet.add(system);
                     }
                 }
                 
-                renderTicketSystemStats(); // NEW
+                // FIX: Populate Dropdown
+                const sysSelect = document.getElementById('systemInput');
+                sysSelect.innerHTML = '<option value="">All Systems</option>' + 
+                    Array.from(systemSet).sort().map(s => `<option value="${s}">${s}</option>`).join('');
+
+                renderTicketSystemStats();
                 renderTicketView();
             } catch(e) {
                 tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:red;">Error Loading</td></tr>';
@@ -372,7 +398,7 @@
             ticketFilters.villa = document.getElementById('villaInput').value.trim();
             ticketFilters.system = document.getElementById('systemInput').value;
             ticketFilters.status = document.getElementById('statusInput').value;
-            ticketFilters.details = document.getElementById('detailsInput').value.trim(); // FIXED
+            ticketFilters.details = document.getElementById('detailsInput').value.trim();
             document.getElementById('clearBtn').style.display = 'block';
             renderTicketView();
         }
@@ -384,7 +410,7 @@
                        (!f.villa || t.villa.toLowerCase().includes(f.villa.toLowerCase())) &&
                        (!f.system || t.system === f.system) &&
                        (!f.status || t.status.toLowerCase().includes(f.status.toLowerCase())) &&
-                       (!f.details || t.details.toLowerCase().includes(f.details.toLowerCase())); // FIXED
+                       (!f.details || t.details.toLowerCase().includes(f.details.toLowerCase()));
             });
 
             // Update Top Stats based on Filter
@@ -567,7 +593,6 @@
         // Render AC
         function renderACTable() {
             let data = acData;
-            // Simple filter: if looking for New/Old, filter rows
             if(compoundFilter === 'anew') data = acData.filter(x => hasACType(x, 'NEW'));
             else if(compoundFilter === 'aold') data = acData.filter(x => hasACType(x, 'OLD'));
 
@@ -592,12 +617,13 @@
                 <div class="villa-card">
                     <div class="card-header" style="background:#0ea5e9">Villa ${x.v}</div>
                     <div class="card-body">
-                        <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:5px; text-align:center;">
-                            ${renderRoom('L',x.l)}${renderRoom('S',x.si)}${renderRoom('O',x.o)}${renderRoom('M1',x.m1)}
-                            ${renderRoom('M2',x.m2)}${renderRoom('M3',x.m3)}${renderRoom('K',x.k)}${renderRoom('G',x.g)}
-                            ${renderRoom('Ki',x.ki)}${renderRoom('Sq',x.sq)}${renderRoom('St',x.st)}${renderRoom('Pt',x.p)}
+                        <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:8px; text-align:center;">
+                            ${renderRoomCard('LIVING ROOM', x.l)}${renderRoomCard('SITTING', x.si)}${renderRoomCard('OFFICE', x.o)}
+                            ${renderRoomCard('MASTER BEDROOM 1', x.m1)}${renderRoomCard('MASTER BEDROOM 2', x.m2)}${renderRoomCard('MASTER BEDROOM 3', x.m3)}
+                            ${renderRoomCard('KIDS ROOM', x.k)}${renderRoomCard('GUEST ROOM', x.g)}${renderRoomCard('KITCHEN', x.ki)}
+                            ${renderRoomCard('SQ (STORE)', x.sq)}${renderRoomCard('STORE', x.st)}${renderRoomCard('PATIO', x.p)}
                         </div>
-                        <div style="margin-top:10px; text-align:right; font-weight:bold;">Total: ${getTotalAC(x)}</div>
+                        <div style="margin-top:15px; text-align:right; font-weight:bold; border-top:1px solid #eee; padding-top:10px;">Total: ${getTotalAC(x)}</div>
                     </div>
                 </div>
             `).join('');
@@ -611,7 +637,15 @@
         function getRenovColor(s) { if(isRenov(s,'full')) return '#22c55e'; if(isRenov(s,'prog')) return '#eab308'; if(isRenov(s,'half')) return '#a855f7'; return '#ef4444'; }
         function calcDur(s,e) { if(!s) return 0; return Math.ceil((new Date(e||new Date())-new Date(s))/(86400000)); }
         function renderCell(val) { const s=String(val).toUpperCase(); const c=s.includes('NEW')?'#22c55e':(s.includes('OLD')?'#eab308':'#94a3b8'); return `<td style="text-align:center; color:${c}; font-weight:bold;">${val}</td>`; }
-        function renderRoom(n,v) { const s=String(v).toUpperCase(); const c=s.includes('NEW')?'#22c55e':(s.includes('OLD')?'#eab308':'#94a3b8'); return `<div style="background:#f1f5f9; padding:5px; border-radius:4px;"><div style="font-size:0.7rem;">${n}</div><div style="font-size:0.8rem; font-weight:bold; color:${c}">${v}</div></div>`; }
+        function renderRoomCard(name, val) { 
+            const s = String(val).toUpperCase(); 
+            const c = s.includes('NEW')?'#22c55e':(s.includes('OLD')?'#eab308':'#94a3b8'); 
+            return `
+            <div style="background:#f8fafc; padding:8px; border-radius:6px; border:1px solid #e2e8f0;">
+                <div style="font-size:0.7rem; color:#64748b; font-weight:bold; margin-bottom:2px;">${name}</div>
+                <div style="font-size:0.9rem; font-weight:bold; color:${c}">${val}</div>
+            </div>`; 
+        }
         function getTotalAC(x) { return [x.l,x.si,x.o,x.m1,x.m2,x.m3,x.k,x.g,x.ki,x.sq,x.st,x.p].filter(v=>v&&v!=='X').length; }
         function hasACType(x, type) { return [x.l,x.si,x.o,x.m1,x.m2,x.m3,x.k,x.g,x.ki,x.sq,x.st,x.p].some(v=>String(v).toUpperCase().includes(type)); }
         function handleCompoundSearch() {
