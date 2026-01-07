@@ -94,14 +94,22 @@
         .pdf-btn:hover { background: #dc2626; }
 
         /* --- PDF PRINT STYLES (Hidden from screen) --- */
-        #pdf-print-area { position: absolute; left: -9999px; top: 0; width: 1000px; background: white; padding: 40px; }
+        #pdf-print-area { 
+            position: absolute; 
+            left: -9999px; 
+            top: 0; 
+            width: 1200px; /* WIDER TO FIT TABLE */
+            background: white; 
+            padding: 40px; 
+            font-family: 'Poppins', sans-serif;
+        }
         .pdf-header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #1e3a5f; padding-bottom: 20px; }
-        .pdf-logo-img { height: 80px; margin-bottom: 10px; }
+        .pdf-logo-img { height: 80px; margin-bottom: 10px; display: block; margin-left: auto; margin-right: auto; }
         .pdf-title { font-size: 24px; color: #1e3a5f; font-weight: bold; margin: 0; }
         .pdf-subtitle { font-size: 14px; color: #666; margin: 5px 0 0; }
         .pdf-table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 12px; }
         .pdf-table th { background: #1e3a5f !important; color: white !important; padding: 10px; text-align: left; border: 1px solid #ddd; }
-        .pdf-table td { padding: 8px; border: 1px solid #ddd; }
+        .pdf-table td { padding: 8px; border: 1px solid #ddd; word-break: break-word; }
         .pdf-footer { margin-top: 30px; text-align: center; font-size: 10px; color: #999; }
 
     </style>
@@ -288,7 +296,8 @@
     <!-- HIDDEN DIV FOR PDF GENERATION -->
     <div id="pdf-print-area">
         <div class="pdf-header">
-            <img src="https://drive.google.com/uc?export=view&id=1VPB1pY6rb93mCmc6lU1FI1mDQ_OvByzj" class="pdf-logo-img">
+            <!-- USING DIRECT DOWNLOAD LINK FOR PDF COMPATIBILITY -->
+            <img src="https://drive.google.com/uc?export=view&id=1VPB1pY6rb93mCmc6lU1FI1mDQ_OvByzj" class="pdf-logo-img" onerror="this.style.display='none';">
             <h1 class="pdf-title" id="pdfTitle">Report</h1>
             <p class="pdf-subtitle" id="pdfDate">Date: </p>
         </div>
@@ -557,8 +566,15 @@
             document.getElementById('pdfContent').innerHTML = tableHtml;
 
             const element = document.getElementById('pdf-print-area');
-            const opt = { margin: 10, filename: `Tickets_${ticketYear}.pdf`, image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2 }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' } };
-            html2pdf().set(opt).from(element).save();
+            const opt = { margin: 10, filename: `Tickets_${ticketYear}.pdf`, image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2, useCORS: true }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' } };
+            
+            // Using Promise to ensure it finishes
+            html2pdf().set(opt).from(element).save().then(() => {
+                console.log("PDF Saved");
+            }).catch(err => {
+                console.error("PDF Error:", err);
+                alert("There was an issue generating the PDF, but it might still download.");
+            });
         }
 
         // ============================================
@@ -755,7 +771,7 @@
                 document.getElementById('pdfContent').innerHTML = tableHtml;
 
                 const element = document.getElementById('pdf-print-area');
-                const opt = { margin: 10, filename: 'Renovation_Report.pdf', image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2 }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' } };
+                const opt = { margin: 10, filename: 'Renovation_Report.pdf', image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2, useCORS: true }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' } };
                 html2pdf().set(opt).from(element).save();
             } 
             // 2. AC PDF
@@ -766,7 +782,6 @@
 
                 if(data.length === 0) { alert("No data."); return; }
 
-                // For AC, we might need to force Portrait or keep landscape depending on preference. Let's stick to Landscape for wide tables.
                 let tableHtml = `<table class="pdf-table" style="font-size: 10px;"><thead><tr><th>Villa</th><th>Living</th><th>Sit</th><th>Off</th><th>M1</th><th>M2</th><th>M3</th><th>Kids</th><th>Gst</th><th>Kit</th><th>SQ</th><th>St</th><th>Pat</th><th>Tot</th></tr></thead><tbody>`;
                 tableHtml += data.map(x => `
                     <tr>
@@ -783,7 +798,7 @@
                 document.getElementById('pdfContent').innerHTML = tableHtml;
 
                 const element = document.getElementById('pdf-print-area');
-                const opt = { margin: 10, filename: 'AC_Replacement_Report.pdf', image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2 }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' } };
+                const opt = { margin: 10, filename: 'AC_Replacement_Report.pdf', image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2, useCORS: true }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' } };
                 html2pdf().set(opt).from(element).save();
             }
         }
