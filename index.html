@@ -3,13 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Villa Master Portal - Final</title>
+    <title>Villa Master Portal</title>
     
     <!-- Libraries -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
     <style>
         /* --- GENERAL STYLES --- */
@@ -82,9 +83,26 @@
         /* Export Button Style */
         .export-btn {
             background: #10b981; color: white; padding: 10px 20px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer;
-            display: inline-flex; align-items: center; gap: 8px; transition: background 0.2s;
+            display: inline-flex; align-items: center; gap: 8px; transition: background 0.2s; margin-right: 10px;
         }
         .export-btn:hover { background: #059669; }
+        
+        .pdf-btn {
+            background: #ef4444; color: white; padding: 10px 20px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer;
+            display: inline-flex; align-items: center; gap: 8px; transition: background 0.2s;
+        }
+        .pdf-btn:hover { background: #dc2626; }
+
+        /* --- PDF PRINT STYLES (Hidden from screen) --- */
+        #pdf-print-area { position: absolute; left: -9999px; top: 0; width: 1000px; background: white; padding: 40px; }
+        .pdf-header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #1e3a5f; padding-bottom: 20px; }
+        .pdf-logo-img { height: 80px; margin-bottom: 10px; }
+        .pdf-title { font-size: 24px; color: #1e3a5f; font-weight: bold; margin: 0; }
+        .pdf-subtitle { font-size: 14px; color: #666; margin: 5px 0 0; }
+        .pdf-table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 12px; }
+        .pdf-table th { background: #1e3a5f !important; color: white !important; padding: 10px; text-align: left; border: 1px solid #ddd; }
+        .pdf-table td { padding: 8px; border: 1px solid #ddd; }
+        .pdf-footer { margin-top: 30px; text-align: center; font-size: 10px; color: #999; }
 
     </style>
 </head>
@@ -93,6 +111,9 @@
     <!-- LOGIN -->
     <div id="login-overlay">
         <div class="login-box">
+            <!-- LOGO -->
+            <img src="https://drive.google.com/uc?export=view&id=1VPB1pY6rb93mCmc6lU1FI1mDQ_OvByzj" alt="Logo" style="height: 70px; margin-bottom: 15px;">
+            
             <h2 style="margin-top:0;">Villa Master Portal</h2>
             <p style="color:#666; font-size: 0.9rem;">Secure Access</p>
             <form onsubmit="handleLogin(event)">
@@ -108,7 +129,11 @@
 
     <!-- MAIN NAV -->
     <nav id="master-nav" class="hidden">
-        <div style="font-weight: bold; font-size: 1.2rem; color: #1e3a5f;">Villa Master Portal</div>
+        <div style="font-weight: bold; font-size: 1.2rem; color: #1e3a5f; display: flex; align-items: center; gap: 10px;">
+            <!-- SMALL NAV LOGO -->
+            <img src="https://drive.google.com/uc?export=view&id=1VPB1pY6rb93mCmc6lU1FI1mDQ_OvByzj" alt="Logo" style="height: 40px;">
+            Villa Master
+        </div>
         <div class="nav-tabs">
             <button class="nav-tab active" onclick="switchMainTab('tickets')">Maintenance Tickets</button>
             <button class="nav-tab" onclick="switchMainTab('compound')">Compound & AC</button>
@@ -133,8 +158,9 @@
                     </select>
                     <button onclick="resetTicketDashboard()" style="background: #8b5cf6; color: white; border: none; padding: 8px 15px; border-radius: 6px; cursor: pointer;">🏠 Home</button>
                     <button onclick="loadTicketData()" style="background: #3b82f6; color: white; border: none; padding: 8px 15px; border-radius: 6px; cursor: pointer;">Refresh</button>
-                    <!-- EXPORT TICKETS -->
-                    <button onclick="exportTicketData()" class="export-btn"><i class="fas fa-file-excel"></i> Export</button>
+                    <!-- EXPORTS -->
+                    <button onclick="exportTicketData()" class="export-btn"><i class="fas fa-file-excel"></i> Excel</button>
+                    <button onclick="generateTicketPDF()" class="pdf-btn"><i class="fas fa-file-pdf"></i> PDF</button>
                 </div>
             </div>
 
@@ -188,8 +214,11 @@
                     <button id="tabRenov" class="nav-tab active" onclick="switchCompoundTab('renovation')">Renovation Status</button>
                     <button id="tabAC" class="nav-tab" onclick="switchCompoundTab('ac')">AC Replacement</button>
                 </div>
-                <!-- EXPORT COMPOUND DATA -->
-                <button onclick="exportCompoundData()" class="export-btn"><i class="fas fa-file-excel"></i> Export Data</button>
+                <!-- EXPORTS -->
+                <div style="display: flex; gap: 10px;">
+                    <button onclick="exportCompoundData()" class="export-btn"><i class="fas fa-file-excel"></i> Excel</button>
+                    <button onclick="generateCompoundPDF()" class="pdf-btn"><i class="fas fa-file-pdf"></i> PDF</button>
+                </div>
             </div>
 
             <!-- SEARCH BAR -->
@@ -256,11 +285,23 @@
 
     </div>
 
+    <!-- HIDDEN DIV FOR PDF GENERATION -->
+    <div id="pdf-print-area">
+        <div class="pdf-header">
+            <img src="https://drive.google.com/uc?export=view&id=1VPB1pY6rb93mCmc6lU1FI1mDQ_OvByzj" class="pdf-logo-img">
+            <h1 class="pdf-title" id="pdfTitle">Report</h1>
+            <p class="pdf-subtitle" id="pdfDate">Date: </p>
+        </div>
+        <div id="pdfContent"></div>
+        <div class="pdf-footer">Generated by Villa Master Portal</div>
+    </div>
+
     <script>
         // --- CONFIG ---
         const PASSWORD = 'villa2025';
         const SHEET_1 = '1T8p2ojn8W6jmC5rTAcZ7xxE7MKy-n9fa5ke4QFzVQY4';
         const SHEET_2 = '1NQguf6umaBIgBmPDu3EYqQXBW6Ovo6pcoTkalDSUlnk';
+        const LOGO_URL = 'https://drive.google.com/uc?export=view&id=1VPB1pY6rb93mCmc6lU1FI1mDQ_OvByzj';
         
         // --- GLOBAL STATE ---
         let ticketYear = '2026';
@@ -269,16 +310,14 @@
         
         let renovData = [];
         let acData = [];
-        let compoundFilter = 'all'; // Stores current filter for compound
+        let compoundFilter = 'all'; 
 
         // --- INIT ---
         if(sessionStorage.getItem('auth') === 'true') showApp();
 
-        // --- 1. EYE ICON FUNCTION ---
         function togglePasswordVisibility() {
             const passwordInput = document.getElementById('masterPassword');
             const toggleIcon = document.getElementById('togglePassword');
-            
             if (passwordInput.type === 'password') {
                 passwordInput.type = 'text';
                 toggleIcon.classList.remove('fa-eye');
@@ -303,8 +342,6 @@
         function showApp() {
             document.getElementById('login-overlay').classList.add('hidden');
             document.getElementById('master-nav').classList.remove('hidden');
-            
-            // Load Data
             initTickets();
             initCompound();
         }
@@ -317,10 +354,8 @@
         function switchMainTab(tab) {
             document.querySelectorAll('.nav-tab').forEach(b => b.classList.remove('active'));
             event.target.classList.add('active');
-            
             document.getElementById('app-tickets').classList.add('hidden');
             document.getElementById('app-compound').classList.add('hidden');
-            
             document.getElementById(`app-${tab}`).classList.remove('hidden');
         }
 
@@ -342,21 +377,17 @@
         async function loadTicketData() {
             const tbody = document.getElementById('ticketTableBody');
             tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">Loading...</td></tr>';
-            
             try {
                 const gid = SHEETS_GIDS[ticketYear];
                 const url = `https://docs.google.com/spreadsheets/d/${SHEET_1}/export?format=csv&gid=${gid}`;
                 const res = await fetch(url);
                 const csv = await res.text();
                 const lines = csv.split('\n');
-                
                 allTickets = [];
                 const systemSet = new Set(); 
-
-                // Skip Header
                 for(let i=1; i<lines.length; i++) {
                     const vals = parseCSV(lines[i]);
-                    if(vals[2]) { // Has MRF
+                    if(vals[2]) {
                         const system = vals[4] || 'Other';
                         allTickets.push({
                             date: vals[0], time: vals[1], mrf: vals[2], villa: vals[3], 
@@ -366,12 +397,8 @@
                         systemSet.add(system);
                     }
                 }
-                
-                // Populate Dropdown
                 const sysSelect = document.getElementById('systemInput');
-                sysSelect.innerHTML = '<option value="">All Systems</option>' + 
-                    Array.from(systemSet).sort().map(s => `<option value="${s}">${s}</option>`).join('');
-
+                sysSelect.innerHTML = '<option value="">All Systems</option>' + Array.from(systemSet).sort().map(s => `<option value="${s}">${s}</option>`).join('');
                 renderTicketSystemStats();
                 renderTicketView();
             } catch(e) {
@@ -385,14 +412,13 @@
                 'AC': {c:'blue', i:'❄️'}, 'Electrical': {c:'yellow', i:'⚡'}, 'Plumbing': {c:'cyan', i:'🚰'},
                 'Carpentry': {c:'gray', i:'🔨'}, 'Painting': {c:'purple', i:'🎨'}, 'Mason': {c:'green', i:'🧱'}
             };
-            
             const html = Object.keys(sysMap).map(sys => {
-                theCount = pending.filter(t => t.system === sys).length;
+                const count = pending.filter(t => t.system === sys).length;
                 return `
                     <div class="stat-card sys-${sysMap[sys].c}" onclick="applySystemFilter('${sys}')">
                         <div class="stat-icon" style="background: #ccc; color: #555;">${sysMap[sys].i}</div>
                         <div>
-                            <h3 style="margin:0; font-size:1.5rem;">${theCount}</h3>
+                            <h3 style="margin:0; font-size:1.5rem;">${count}</h3>
                             <p style="margin:0; font-size:0.9rem;">${sys}</p>
                         </div>
                     </div>
@@ -444,32 +470,22 @@
                        (!f.status || t.status.toLowerCase().includes(f.status.toLowerCase())) &&
                        (!f.details || t.details.toLowerCase().includes(f.details.toLowerCase()));
             });
-
-            // Update Top Stats based on Filter
             const stats = {
                 t: filtered.length, p: filtered.filter(x=>x.status.toLowerCase().includes('pending')).length,
                 c: filtered.filter(x=>x.status.toLowerCase().includes('completed')).length,
                 pr: filtered.filter(x=>x.status.toLowerCase().includes('progress')).length
             };
-            
             document.getElementById('ticketStatsArea').innerHTML = `
                 <div class="stat-card" style="border-left-color:#3b82f6"><div class="stat-icon" style="background:#3b82f6">T</div><div><h3>${stats.t}</h3><p>Total</p></div></div>
                 <div class="stat-card" style="border-left-color:#eab308"><div class="stat-icon" style="background:#eab308">P</div><div><h3>${stats.p}</h3><p>Pending</p></div></div>
                 <div class="stat-card" style="border-left-color:#4f46e5"><div class="stat-icon" style="background:#4f46e5">I</div><div><h3>${stats.pr}</h3><p>In Progress</p></div></div>
                 <div class="stat-card" style="border-left-color:#22c55e"><div class="stat-icon" style="background:#22c55e">C</div><div><h3>${stats.c}</h3><p>Completed</p></div></div>
             `;
-
-            // Table
             const tbody = document.getElementById('ticketTableBody');
             let displayData = filtered;
             const isSearching = f.mrf || f.villa || f.system || f.status || f.details;
-            
-            if (!isSearching) {
-                displayData = [...filtered].reverse().slice(0, 10);
-            } else {
-                displayData = [...filtered].reverse().slice(0, 100);
-            }
-
+            if (!isSearching) displayData = [...filtered].reverse().slice(0, 10);
+            else displayData = [...filtered].reverse().slice(0, 100);
             if(displayData.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">No tickets found</td></tr>';
             } else {
@@ -492,9 +508,8 @@
             return 'badge-pending';
         }
 
-        // --- EXPORT FUNCTION FOR TICKETS (FILTERED) ---
+        // --- PDF & EXCEL EXPORTS (TICKETS) ---
         function exportTicketData() {
-            // Re-calculate filtered data based on CURRENT inputs
             const f = ticketFilters;
             const dataToExport = allTickets.filter(t => {
                 return (!f.mrf || t.mrf.toLowerCase().includes(f.mrf.toLowerCase())) &&
@@ -502,82 +517,80 @@
                        (!f.system || t.system === f.system) &&
                        (!f.status || t.status.toLowerCase().includes(f.status.toLowerCase())) &&
                        (!f.details || t.details.toLowerCase().includes(f.details.toLowerCase()));
-            }).reverse(); // Export newest first
-
-            if (dataToExport.length === 0) {
-                alert("No data to export based on your filters.");
-                return;
-            }
-
-            // Create Sheet
+            }).reverse();
+            if (dataToExport.length === 0) { alert("No data to export based on your filters."); return; }
             const ws = XLSX.utils.json_to_sheet(dataToExport.map(t => ({
                 Date: t.date, Time: t.time, 'MRF No': t.mrf, Villa: t.villa, 
                 System: t.system, Details: t.details, Status: t.status
             })));
-            
-            // Styling for Clean Print
             const range = XLSX.utils.decode_range(ws['!ref']);
             for(let C = range.s.c; C <= range.e.c; ++C) {
-                const address = XLSX.utils.encode_col(C) + "1"; // Header row
+                const address = XLSX.utils.encode_col(C) + "1";
                 if(!ws[address]) continue;
-                ws[address].s = {
-                    font: { bold: true, color: { rgb: "FFFFFF" } },
-                    fill: { fgColor: { rgb: "1E3A5F" } }, // Dark Blue Header
-                    alignment: { horizontal: "center" }
-                };
+                ws[address].s = { font: { bold: true, color: { rgb: "FFFFFF" } }, fill: { fgColor: { rgb: "1E3A5F" } }, alignment: { horizontal: "center" } };
             }
-            ws['!cols'] = Object.keys(dataToExport[0] || {}).map(() => ({ wch: 20 })); // Auto width
-
+            ws['!cols'] = Object.keys(dataToExport[0] || {}).map(() => ({ wch: 20 }));
             const wb = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(wb, ws, "Report");
             XLSX.writeFile(wb, `Maintenance_Report_${ticketYear}.xlsx`);
+        }
+
+        function generateTicketPDF() {
+            const f = ticketFilters;
+            const dataToExport = allTickets.filter(t => {
+                return (!f.mrf || t.mrf.toLowerCase().includes(f.mrf.toLowerCase())) &&
+                       (!f.villa || t.villa.toLowerCase().includes(f.villa.toLowerCase())) &&
+                       (!f.system || t.system === f.system) &&
+                       (!f.status || t.status.toLowerCase().includes(f.status.toLowerCase())) &&
+                       (!f.details || t.details.toLowerCase().includes(f.details.toLowerCase()));
+            }).reverse();
+            
+            if(dataToExport.length === 0) { alert("No data to export."); return; }
+
+            // Build PDF HTML
+            let tableHtml = `<table class="pdf-table"><thead><tr><th>Date</th><th>MRF</th><th>Villa</th><th>System</th><th>Details</th><th>Status</th></tr></thead><tbody>`;
+            tableHtml += dataToExport.map(t => `<tr><td>${t.date}</td><td>${t.mrf}</td><td>${t.villa}</td><td>${t.system}</td><td>${t.details}</td><td>${t.status}</td></tr>`).join('');
+            tableHtml += `</tbody></table>`;
+
+            document.getElementById('pdfTitle').innerText = "Maintenance Tickets Report";
+            document.getElementById('pdfDate').innerText = `Year: ${ticketYear} | Generated: ${new Date().toLocaleDateString()}`;
+            document.getElementById('pdfContent').innerHTML = tableHtml;
+
+            const element = document.getElementById('pdf-print-area');
+            const opt = { margin: 10, filename: `Tickets_${ticketYear}.pdf`, image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2 }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' } };
+            html2pdf().set(opt).from(element).save();
         }
 
         // ============================================
         // APP 2: COMPOUND
         // ============================================
         async function initCompound() {
-            try {
-                await Promise.all([fetchRenov(), fetchAC()]);
-                renderCompound();
-            } catch(e) { console.error(e); }
+            try { await Promise.all([fetchRenov(), fetchAC()]); renderCompound(); } catch(e) { console.error(e); }
         }
-
         async function fetchRenov() {
             const res = await fetch(`https://docs.google.com/spreadsheets/d/${SHEET_2}/gviz/tq?tqx=out:json&gid=0`);
             const txt = await res.text();
             const json = JSON.parse(txt.substring(txt.indexOf('{'), txt.lastIndexOf('}')+1));
             renovData = json.table.rows.map((r,i) => {
                 const c = r.c;
-                return { 
-                    id: i, v: getVal(c,0), s: getVal(c,1), dR: getVal(c,2), rem: getVal(c,3), 
-                    cost: parseFloat(String(getVal(c,4)).replace(/[^0-9.-]/g,''))||0, sD: getVal(c,5), eD: getVal(c,6), n: getVal(c,7)
-                };
+                return { id: i, v: getVal(c,0), s: getVal(c,1), dR: getVal(c,2), rem: getVal(c,3), cost: parseFloat(String(getVal(c,4)).replace(/[^0-9.-]/g,''))||0, sD: getVal(c,5), eD: getVal(c,6), n: getVal(c,7) };
             }).filter(x => x.v && !String(x.v).toLowerCase().includes('villa'));
         }
-
         async function fetchAC() {
             const res = await fetch(`https://docs.google.com/spreadsheets/d/${SHEET_2}/gviz/tq?tqx=out:json&gid=7537460`);
             const txt = await res.text();
             const json = JSON.parse(txt.substring(txt.indexOf('{'), txt.lastIndexOf('}')+1));
             acData = json.table.rows.map((r,i) => {
                 const c = r.c;
-                return {
-                    id: i, v: getVal(c,0), l: getVal(c,1), si: getVal(c,2), o: getVal(c,3), m1: getVal(c,4),
-                    m2: getVal(c,5), m3: getVal(c,6), k: getVal(c,7), g: getVal(c,8), ki: getVal(c,9), sq: getVal(c,10), st: getVal(c,11), p: getVal(c,12)
-                };
+                return { id: i, v: getVal(c,0), l: getVal(c,1), si: getVal(c,2), o: getVal(c,3), m1: getVal(c,4), m2: getVal(c,5), m3: getVal(c,6), k: getVal(c,7), g: getVal(c,8), ki: getVal(c,9), sq: getVal(c,10), st: getVal(c,11), p: getVal(c,12) };
             }).filter(x => x.v && !String(x.v).toLowerCase().includes('villa'));
         }
-
         function renderCompound() {
-            // Renov Stats
             document.getElementById('rTotal').innerText = renovData.length;
             document.getElementById('rFull').innerText = renovData.filter(x=>isRenov(x.s,'full')).length;
             document.getElementById('rHalf').innerText = renovData.filter(x=>isRenov(x.s,'half')).length;
             document.getElementById('rProg').innerText = renovData.filter(x=>isRenov(x.s,'prog')).length;
             document.getElementById('rNon').innerText = renovData.filter(x=>isRenov(x.s,'non')).length;
-
-            // AC Stats
             let tAc=0, nAc=0, oAc=0;
             acData.forEach(d => {
                 [d.l,d.si,d.o,d.m1,d.m2,d.m3,d.k,d.g,d.ki,d.sq,d.st,d.p].forEach(v => {
@@ -588,20 +601,17 @@
             document.getElementById('aTotal').innerText = tAc;
             document.getElementById('aNew').innerText = nAc;
             document.getElementById('aOld').innerText = oAc;
-
             renderRenovTable();
             renderRenovCards();
             renderACTable();
             renderACCards();
         }
-
         function switchCompoundTab(t) {
             document.getElementById('tabRenov').classList.toggle('active', t==='renovation');
             document.getElementById('tabAC').classList.toggle('active', t==='ac');
             document.getElementById('viewRenovation').classList.toggle('hidden', t!=='renovation');
             document.getElementById('viewAC').classList.toggle('hidden', t!=='ac');
         }
-
         function toggleView(type, v) {
             if(type==='renov') {
                 document.getElementById('renovTableContainer').classList.toggle('hidden', v!=='table');
@@ -616,109 +626,33 @@
                 document.getElementById('btnACTable').style.background = v==='table'?'#1e3a5f':'#e2e8f0';
                 document.getElementById('btnACTable').style.color = v==='table'?'white':'#333';
                 document.getElementById('btnACCards').style.background = v==='cards'?'#1e3a5f':'#e2e8f0';
-                document.getElementById('acACCards').style.color = v==='cards'?'white':'#333';
+                document.getElementById('btnACCards').style.color = v==='cards'?'white':'#333';
             }
         }
-
         function filterRenov(type) {
             compoundFilter = 'r'+type;
             renderRenovTable();
             renderRenovCards();
         }
-
         function filterAC(type) {
             compoundFilter = 'a'+type;
             renderACTable();
             renderACCards();
         }
-
-        // --- EXPORT FUNCTION FOR COMPOUND (FILTERED) ---
-        function exportCompoundData() {
-            const isRenovTab = !document.getElementById('viewRenovation').classList.contains('hidden');
-            const wb = XLSX.utils.book_new();
-
-            // 1. Export Renovation (Based on Filter)
-            if (isRenovTab) {
-                let data = renovData;
-                if(compoundFilter === 'rfull') data = renovData.filter(x=>isRenov(x.s,'full'));
-                else if(compoundFilter === 'rhalf') data = renovData.filter(x=>isRenov(x.s,'half'));
-                else if(compoundFilter === 'rprog') data = renovData.filter(x=>isRenov(x.s,'prog'));
-                else if(compoundFilter === 'rnon') data = renovData.filter(x=>isRenov(x.s,'non'));
-
-                if(data.length === 0) { alert("No Renovation data to export."); return; }
-
-                const ws = XLSX.utils.json_to_sheet(data.map(x => ({
-                    'Villa No': x.v, 'Status': x.s, 'Cost': x.cost, 'Duration (Days)': calcDur(x.sD, x.eD), 'Notes': x.n
-                })));
-
-                // Styling
-                const range = XLSX.utils.decode_range(ws['!ref']);
-                for(let C = range.s.c; C <= range.e.c; ++C) {
-                    const address = XLSX.utils.encode_col(C) + "1";
-                    if(!ws[address]) continue;
-                    ws[address].s = { font: { bold: true }, fill: { fgColor: { rgb: "1E3A5F" } }, alignment: { horizontal: "center" } };
-                }
-                ws['!cols'] = [{wch:15}, {wch:20}, {wch:15}, {wch:15}, {wch:30}];
-
-                XLSX.utils.book_append_sheet(wb, ws, "Renovation Report");
-            } 
-            // 2. Export AC (Based on Filter)
-            else {
-                let data = acData;
-                if(compoundFilter === 'anew') data = acData.filter(x => hasACType(x, 'NEW'));
-                else if(compoundFilter === 'aold') data = acData.filter(x => hasACType(x, 'OLD'));
-
-                if(data.length === 0) { alert("No AC data to export."); return; }
-
-                const ws = XLSX.utils.json_to_sheet(data.map(x => ({
-                    'Villa No': x.v, 'Living Room': x.l, 'Sitting': x.si, 'Office': x.o,
-                    'Master 1': x.m1, 'Master 2': x.m2, 'Master 3': x.m3, 'Kids': x.k,
-                    'Guest': x.g, 'Kitchen': x.ki, 'SQ': x.sq, 'Store': x.st, 'Patio': x.p,
-                    'Total ACs': getTotalAC(x)
-                })));
-
-                // Styling
-                const range = XLSX.utils.decode_range(ws['!ref']);
-                for(let C = range.s.c; C <= range.e.c; ++C) {
-                    const address = XLSX.utils.encode_col(C) + "1";
-                    if(!ws[address]) continue;
-                    ws[address].s = { font: { bold: true }, fill: { fgColor: { rgb: "1E3A5F" } }, alignment: { horizontal: "center" } };
-                }
-                ws['!cols'] = Object.keys(data[0]).map(() => ({ wch: 15 }));
-
-                XLSX.utils.book_append_sheet(wb, ws, "AC Report");
-            }
-
-            XLSX.writeFile(wb, `Compound_Report_${new Date().toISOString().split('T')[0]}.xlsx`);
-        }
-
-        // Render Renovation
         function renderRenovTable() {
             let data = renovData;
             if(compoundFilter === 'rfull') data = renovData.filter(x=>isRenov(x.s,'full'));
             else if(compoundFilter === 'rhalf') data = renovData.filter(x=>isRenov(x.s,'half'));
             else if(compoundFilter === 'rprog') data = renovData.filter(x=>isRenov(x.s,'prog'));
             else if(compoundFilter === 'rnon') data = renovData.filter(x=>isRenov(x.s,'non'));
-
-            document.getElementById('renovTableBody').innerHTML = data.map(x => `
-                <tr>
-                    <td>Villa ${x.v}</td>
-                    <td><span class="badge ${getRenovBadge(x.s)}">${x.s||'N/A'}</span></td>
-                    <td>${x.cost}</td>
-                    <td>${calcDur(x.sD, x.eD)} days</td>
-                    <td>${x.dR||'-'}</td>
-                    <td>${x.n||'-'}</td>
-                </tr>
-            `).join('');
+            document.getElementById('renovTableBody').innerHTML = data.map(x => `<tr><td>Villa ${x.v}</td><td><span class="badge ${getRenovBadge(x.s)}">${x.s||'N/A'}</span></td><td>${x.cost}</td><td>${calcDur(x.sD, x.eD)} days</td><td>${x.dR||'-'}</td><td>${x.n||'-'}</td></tr>`).join('');
         }
-
         function renderRenovCards() {
-             let data = renovData;
+            let data = renovData;
             if(compoundFilter === 'rfull') data = renovData.filter(x=>isRenov(x.s,'full'));
             else if(compoundFilter === 'rhalf') data = renovData.filter(x=>isRenov(x.s,'half'));
             else if(compoundFilter === 'rprog') data = renovData.filter(x=>isRenov(x.s,'prog'));
             else if(compoundFilter === 'rnon') data = renovData.filter(x=>isRenov(x.s,'non'));
-
             document.getElementById('renovCardContainer').innerHTML = data.map(x => `
                 <div class="villa-card">
                     <div class="card-header" style="background:${getRenovColor(x.s)}">Villa ${x.v}</div>
@@ -728,16 +662,12 @@
                         <div class="card-row"><span>Duration:</span><b>${calcDur(x.sD, x.eD)} days</b></div>
                         <div class="card-row"><span>Notes:</span><span>${x.n||'-'}</span></div>
                     </div>
-                </div>
-            `).join('');
+                </div>`).join('');
         }
-
-        // Render AC
         function renderACTable() {
             let data = acData;
             if(compoundFilter === 'anew') data = acData.filter(x => hasACType(x, 'NEW'));
             else if(compoundFilter === 'aold') data = acData.filter(x => hasACType(x, 'OLD'));
-
             document.getElementById('acTableBody').innerHTML = data.map(x => `
                 <tr>
                     <td>Villa ${x.v}</td>
@@ -746,15 +676,12 @@
                     ${renderCell(x.k)}${renderCell(x.g)}${renderCell(x.ki)}
                     ${renderCell(x.sq)}${renderCell(x.st)}${renderCell(x.p)}
                     <td style="text-align:center; font-weight:bold;">${getTotalAC(x)}</td>
-                </tr>
-            `).join('');
+                </tr>`).join('');
         }
-
         function renderACCards() {
             let data = acData;
             if(compoundFilter === 'anew') data = acData.filter(x => hasACType(x, 'NEW'));
             else if(compoundFilter === 'aold') data = acData.filter(x => hasACType(x, 'OLD'));
-
             document.getElementById('acCardContainer').innerHTML = data.map(x => `
                 <div class="villa-card">
                     <div class="card-header" style="background:#0ea5e9">Villa ${x.v}</div>
@@ -767,8 +694,104 @@
                         </div>
                         <div style="margin-top:15px; text-align:right; font-weight:bold; border-top:1px solid #eee; padding-top:10px;">Total: ${getTotalAC(x)}</div>
                     </div>
-                </div>
-            `).join('');
+                </div>`).join('');
+        }
+        function exportCompoundData() {
+            const isRenovTab = !document.getElementById('viewRenovation').classList.contains('hidden');
+            const wb = XLSX.utils.book_new();
+            if (isRenovTab) {
+                let data = renovData;
+                if(compoundFilter === 'rfull') data = renovData.filter(x=>isRenov(x.s,'full'));
+                else if(compoundFilter === 'rhalf') data = renovData.filter(x=>isRenov(x.s,'half'));
+                else if(compoundFilter === 'rprog') data = renovData.filter(x=>isRenov(x.s,'prog'));
+                else if(compoundFilter === 'rnon') data = renovData.filter(x=>isRenov(x.s,'non'));
+                if(data.length === 0) { alert("No Renovation data to export."); return; }
+                const ws = XLSX.utils.json_to_sheet(data.map(x => ({ 'Villa No': x.v, 'Status': x.s, 'Cost': x.cost, 'Duration (Days)': calcDur(x.sD, x.eD), 'Notes': x.n })));
+                const range = XLSX.utils.decode_range(ws['!ref']);
+                for(let C = range.s.c; C <= range.e.c; ++C) {
+                    const address = XLSX.utils.encode_col(C) + "1";
+                    if(!ws[address]) continue;
+                    ws[address].s = { font: { bold: true }, fill: { fgColor: { rgb: "1E3A5F" } }, alignment: { horizontal: "center" } };
+                }
+                ws['!cols'] = [{wch:15}, {wch:20}, {wch:15}, {wch:15}, {wch:30}];
+                XLSX.utils.book_append_sheet(wb, ws, "Renovation Report");
+            } else {
+                let data = acData;
+                if(compoundFilter === 'anew') data = acData.filter(x => hasACType(x, 'NEW'));
+                else if(compoundFilter === 'aold') data = acData.filter(x => hasACType(x, 'OLD'));
+                if(data.length === 0) { alert("No AC data to export."); return; }
+                const ws = XLSX.utils.json_to_sheet(data.map(x => ({ 'Villa No': x.v, 'Living Room': x.l, 'Sitting': x.si, 'Office': x.o, 'Master 1': x.m1, 'Master 2': x.m2, 'Master 3': x.m3, 'Kids': x.k, 'Guest': x.g, 'Kitchen': x.ki, 'SQ': x.sq, 'Store': x.st, 'Patio': x.p, 'Total ACs': getTotalAC(x) })));
+                const range = XLSX.utils.decode_range(ws['!ref']);
+                for(let C = range.s.c; C <= range.e.c; ++C) {
+                    const address = XLSX.utils.encode_col(C) + "1";
+                    if(!ws[address]) continue;
+                    ws[address].s = { font: { bold: true }, fill: { fgColor: { rgb: "1E3A5F" } }, alignment: { horizontal: "center" } };
+                }
+                ws['!cols'] = Object.keys(data[0]).map(() => ({ wch: 15 }));
+                XLSX.utils.book_append_sheet(wb, ws, "AC Report");
+            }
+            XLSX.writeFile(wb, `Compound_Report_${new Date().toISOString().split('T')[0]}.xlsx`);
+        }
+
+        function generateCompoundPDF() {
+            const isRenovTab = !document.getElementById('viewRenovation').classList.contains('hidden');
+            
+            // 1. Renovation PDF
+            if(isRenovTab) {
+                let data = renovData;
+                if(compoundFilter === 'rfull') data = renovData.filter(x=>isRenov(x.s,'full'));
+                else if(compoundFilter === 'rhalf') data = renovData.filter(x=>isRenov(x.s,'half'));
+                else if(compoundFilter === 'rprog') data = renovData.filter(x=>isRenov(x.s,'prog'));
+                else if(compoundFilter === 'rnon') data = renovData.filter(x=>isRenov(x.s,'non'));
+                
+                if(data.length === 0) { alert("No data."); return; }
+
+                let tableHtml = `<table class="pdf-table"><thead><tr><th>Villa</th><th>Status</th><th>Cost</th><th>Duration</th><th>Date</th><th>Notes</th></tr></thead><tbody>`;
+                tableHtml += data.map(x => `<tr><td>${x.v}</td><td>${x.s}</td><td>${x.cost}</td><td>${calcDur(x.sD, x.eD)} days</td><td>${x.dR||'-'}</td><td>${x.n||'-'}</td></tr>`).join('');
+                tableHtml += `</tbody></table>`;
+
+                document.getElementById('pdfTitle').innerText = "Renovation Status Report";
+                document.getElementById('pdfDate').innerText = `Generated: ${new Date().toLocaleDateString()}`;
+                document.getElementById('pdfContent').innerHTML = tableHtml;
+
+                const element = document.getElementById('pdf-print-area');
+                const opt = { margin: 10, filename: 'Renovation_Report.pdf', image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2 }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' } };
+                html2pdf().set(opt).from(element).save();
+            } 
+            // 2. AC PDF
+            else {
+                let data = acData;
+                if(compoundFilter === 'anew') data = acData.filter(x => hasACType(x, 'NEW'));
+                else if(compoundFilter === 'aold') data = acData.filter(x => hasACType(x, 'OLD'));
+
+                if(data.length === 0) { alert("No data."); return; }
+
+                // For AC, we might need to force Portrait or keep landscape depending on preference. Let's stick to Landscape for wide tables.
+                let tableHtml = `<table class="pdf-table" style="font-size: 10px;"><thead><tr><th>Villa</th><th>Living</th><th>Sit</th><th>Off</th><th>M1</th><th>M2</th><th>M3</th><th>Kids</th><th>Gst</th><th>Kit</th><th>SQ</th><th>St</th><th>Pat</th><th>Tot</th></tr></thead><tbody>`;
+                tableHtml += data.map(x => `
+                    <tr>
+                        <td>${x.v}</td>${renderPDFCell(x.l)}${renderPDFCell(x.si)}${renderPDFCell(x.o)}
+                        ${renderPDFCell(x.m1)}${renderPDFCell(x.m2)}${renderPDFCell(x.m3)}
+                        ${renderPDFCell(x.k)}${renderPDFCell(x.g)}${renderPDFCell(x.ki)}
+                        ${renderPDFCell(x.sq)}${renderPDFCell(x.st)}${renderPDFCell(x.p)}
+                        <td style="text-align:center; font-weight:bold;">${getTotalAC(x)}</td>
+                    </tr>`).join('');
+                tableHtml += `</tbody></table>`;
+
+                document.getElementById('pdfTitle').innerText = "AC Replacement Report";
+                document.getElementById('pdfDate').innerText = `Generated: ${new Date().toLocaleDateString()}`;
+                document.getElementById('pdfContent').innerHTML = tableHtml;
+
+                const element = document.getElementById('pdf-print-area');
+                const opt = { margin: 10, filename: 'AC_Replacement_Report.pdf', image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2 }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' } };
+                html2pdf().set(opt).from(element).save();
+            }
+        }
+
+        function renderPDFCell(val) {
+            const s=String(val).toUpperCase();
+            const c=s.includes('NEW')?'#22c55e':(s.includes('OLD')?'#eab308':'#000');
+            return `<td style="text-align:center; color:${c}; font-weight:bold;">${val}</td>`;
         }
 
         // Helpers
@@ -779,15 +802,7 @@
         function getRenovColor(s) { if(isRenov(s,'full')) return '#22c55e'; if(isRenov(s,'prog')) return '#eab308'; if(isRenov(s,'half')) return '#a855f7'; return '#ef4444'; }
         function calcDur(s,e) { if(!s) return 0; return Math.ceil((new Date(e||new Date())-new Date(s))/(86400000)); }
         function renderCell(val) { const s=String(val).toUpperCase(); const c=s.includes('NEW')?'#22c55e':(s.includes('OLD')?'#eab308':'#94a3b8'); return `<td style="text-align:center; color:${c}; font-weight:bold;">${val}</td>`; }
-        function renderRoomCard(name, val) { 
-            const s = String(val).toUpperCase(); 
-            const c = s.includes('NEW')?'#22c55e':(s.includes('OLD')?'#eab308':'#94a3b8'); 
-            return `
-            <div style="background:#f8fafc; padding:8px; border-radius:6px; border:1px solid #e2e8f0;">
-                <div style="font-size:0.7rem; color:#64748b; font-weight:bold; margin-bottom:2px;">${name}</div>
-                <div style="font-size:0.9rem; font-weight:bold; color:${c}">${val}</div>
-            </div>`; 
-        }
+        function renderRoomCard(name, val) { const s = String(val).toUpperCase(); const c = s.includes('NEW')?'#22c55e':(s.includes('OLD')?'#eab308':'#94a3b8'); return `<div style="background:#f8fafc; padding:8px; border-radius:6px; border:1px solid #e2e8f0;"><div style="font-size:0.7rem; color:#64748b; font-weight:bold; margin-bottom:2px;">${name}</div><div style="font-size:0.9rem; font-weight:bold; color:${c}">${val}</div></div>`; }
         function getTotalAC(x) { return [x.l,x.si,x.o,x.m1,x.m2,x.m3,x.k,x.g,x.ki,x.sq,x.st,x.p].filter(v=>v&&v!=='X').length; }
         function hasACType(x, type) { return [x.l,x.si,x.o,x.m1,x.m2,x.m3,x.k,x.g,x.ki,x.sq,x.st,x.p].some(v=>String(v).toUpperCase().includes(type)); }
         function handleCompoundSearch() {
