@@ -98,19 +98,20 @@
             position: absolute; 
             left: -9999px; 
             top: 0; 
-            width: 1200px; /* WIDER TO FIT TABLE */
+            width: 297mm; /* A4 Width */
             background: white; 
-            padding: 40px; 
+            padding: 15px; 
             font-family: 'Poppins', sans-serif;
+            font-size: 10px; /* Smaller font to fit more data */
         }
-        .pdf-header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #1e3a5f; padding-bottom: 20px; }
-        .pdf-logo-img { height: 80px; margin-bottom: 10px; display: block; margin-left: auto; margin-right: auto; }
-        .pdf-title { font-size: 24px; color: #1e3a5f; font-weight: bold; margin: 0; }
-        .pdf-subtitle { font-size: 14px; color: #666; margin: 5px 0 0; }
-        .pdf-table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 12px; }
-        .pdf-table th { background: #1e3a5f !important; color: white !important; padding: 10px; text-align: left; border: 1px solid #ddd; }
-        .pdf-table td { padding: 8px; border: 1px solid #ddd; word-break: break-word; }
-        .pdf-footer { margin-top: 30px; text-align: center; font-size: 10px; color: #999; }
+        .pdf-header { text-align: center; margin-bottom: 20px; border-bottom: 2px solid #1e3a5f; padding-bottom: 15px; }
+        .pdf-logo-img { height: 60px; margin-bottom: 5px; display: block; margin-left: auto; margin-right: auto; }
+        .pdf-title { font-size: 18px; color: #1e3a5f; font-weight: bold; margin: 0; }
+        .pdf-subtitle { font-size: 12px; color: #666; margin: 3px 0 0; }
+        .pdf-table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 9px; }
+        .pdf-table th { background: #1e3a5f !important; color: white !important; padding: 6px; text-align: center; border: 1px solid #ddd; }
+        .pdf-table td { padding: 5px; border: 1px solid #ddd; text-align: center; }
+        .pdf-footer { margin-top: 20px; text-align: center; font-size: 10px; color: #999; }
 
     </style>
 </head>
@@ -565,16 +566,20 @@
             document.getElementById('pdfDate').innerText = `Year: ${ticketYear} | Generated: ${new Date().toLocaleDateString()}`;
             document.getElementById('pdfContent').innerHTML = tableHtml;
 
-            const element = document.getElementById('pdf-print-area');
-            const opt = { margin: 10, filename: `Tickets_${ticketYear}.pdf`, image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2, useCORS: true }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' } };
-            
-            // Using Promise to ensure it finishes
-            html2pdf().set(opt).from(element).save().then(() => {
-                console.log("PDF Saved");
-            }).catch(err => {
-                console.error("PDF Error:", err);
-                alert("There was an issue generating the PDF, but it might still download.");
-            });
+            // Add loading alert to ensure data is ready
+            alert("Generating PDF... Please wait.");
+
+            setTimeout(() => {
+                const element = document.getElementById('pdf-print-area');
+                const opt = { 
+                    margin: 10, 
+                    filename: `Tickets_${ticketYear}.pdf`, 
+                    image: { type: 'jpeg', quality: 0.98 }, 
+                    html2canvas: { scale: 2, useCORS: true }, 
+                    jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' } 
+                };
+                html2pdf().set(opt).from(element).save();
+            }, 500);
         }
 
         // ============================================
@@ -589,7 +594,10 @@
             const json = JSON.parse(txt.substring(txt.indexOf('{'), txt.lastIndexOf('}')+1));
             renovData = json.table.rows.map((r,i) => {
                 const c = r.c;
-                return { id: i, v: getVal(c,0), s: getVal(c,1), dR: getVal(c,2), rem: getVal(c,3), cost: parseFloat(String(getVal(c,4)).replace(/[^0-9.-]/g,''))||0, sD: getVal(c,5), eD: getVal(c,6), n: getVal(c,7) };
+                return { 
+                    id: i, v: getVal(c,0), s: getVal(c,1), dR: getVal(c,2), rem: getVal(c,3), 
+                    cost: parseFloat(String(getVal(c,4)).replace(/[^0-9.-]/g,''))||0, sD: getVal(c,5), eD: getVal(c,6), n: getVal(c,7) 
+                };
             }).filter(x => x.v && !String(x.v).toLowerCase().includes('villa'));
         }
         async function fetchAC() {
@@ -598,25 +606,36 @@
             const json = JSON.parse(txt.substring(txt.indexOf('{'), txt.lastIndexOf('}')+1));
             acData = json.table.rows.map((r,i) => {
                 const c = r.c;
-                return { id: i, v: getVal(c,0), l: getVal(c,1), si: getVal(c,2), o: getVal(c,3), m1: getVal(c,4), m2: getVal(c,5), m3: getVal(c,6), k: getVal(c,7), g: getVal(c,8), ki: getVal(c,9), sq: getVal(c,10), st: getVal(c,11), p: getVal(c,12) };
+                return { 
+                    id: i, v: getVal(c,0), l: getVal(c,1), si: getVal(c,2), o: getVal(c,3), m1: getVal(c,4),
+                    m2: getVal(c,5), m3: getVal(c,6), k: getVal(c,7), g: getVal(c,8), ki: getVal(c,9), sq: getVal(c,10), st: getVal(c,11), p: getVal(c,12) 
+                };
             }).filter(x => x.v && !String(x.v).toLowerCase().includes('villa'));
         }
         function renderCompound() {
+            // Renov Stats
             document.getElementById('rTotal').innerText = renovData.length;
             document.getElementById('rFull').innerText = renovData.filter(x=>isRenov(x.s,'full')).length;
             document.getElementById('rHalf').innerText = renovData.filter(x=>isRenov(x.s,'half')).length;
             document.getElementById('rProg').innerText = renovData.filter(x=>isRenov(x.s,'prog')).length;
             document.getElementById('rNon').innerText = renovData.filter(x=>isRenov(x.s,'non')).length;
+
+            // AC Stats
             let tAc=0, nAc=0, oAc=0;
             acData.forEach(d => {
                 [d.l,d.si,d.o,d.m1,d.m2,d.m3,d.k,d.g,d.ki,d.sq,d.st,d.p].forEach(v => {
                     const s = String(v).toUpperCase();
-                    if(s && s!=='X') { tAc++; if(s.includes('NEW')) nAc++; else oAc++; }
+                    // ONLY COUNT IF NOT 'X'
+                    if(s && s!=='X') { 
+                        tAc++; 
+                        if(s.includes('NEW')) nAc++; else oAc++; 
+                    }
                 });
             });
             document.getElementById('aTotal').innerText = tAc;
             document.getElementById('aNew').innerText = nAc;
             document.getElementById('aOld').innerText = oAc;
+
             renderRenovTable();
             renderRenovCards();
             renderACTable();
@@ -770,9 +789,13 @@
                 document.getElementById('pdfDate').innerText = `Generated: ${new Date().toLocaleDateString()}`;
                 document.getElementById('pdfContent').innerHTML = tableHtml;
 
-                const element = document.getElementById('pdf-print-area');
-                const opt = { margin: 10, filename: 'Renovation_Report.pdf', image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2, useCORS: true }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' } };
-                html2pdf().set(opt).from(element).save();
+                alert("Generating PDF... Please wait.");
+
+                setTimeout(() => {
+                    const element = document.getElementById('pdf-print-area');
+                    const opt = { margin: 10, filename: 'Renovation_Report.pdf', image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2, useCORS: true }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' } };
+                    html2pdf().set(opt).from(element).save();
+                }, 500);
             } 
             // 2. AC PDF
             else {
@@ -782,7 +805,7 @@
 
                 if(data.length === 0) { alert("No data."); return; }
 
-                let tableHtml = `<table class="pdf-table" style="font-size: 10px;"><thead><tr><th>Villa</th><th>Living</th><th>Sit</th><th>Off</th><th>M1</th><th>M2</th><th>M3</th><th>Kids</th><th>Gst</th><th>Kit</th><th>SQ</th><th>St</th><th>Pat</th><th>Tot</th></tr></thead><tbody>`;
+                let tableHtml = `<table class="pdf-table" style="font-size: 8px;"><thead><tr><th>Villa</th><th>Living</th><th>Sit</th><th>Off</th><th>M1</th><th>M2</th><th>M3</th><th>Kids</th><th>Gst</th><th>Kit</th><th>SQ</th><th>St</th><th>Pat</th><th>Tot</th></tr></thead><tbody>`;
                 tableHtml += data.map(x => `
                     <tr>
                         <td>${x.v}</td>${renderPDFCell(x.l)}${renderPDFCell(x.si)}${renderPDFCell(x.o)}
@@ -797,9 +820,13 @@
                 document.getElementById('pdfDate').innerText = `Generated: ${new Date().toLocaleDateString()}`;
                 document.getElementById('pdfContent').innerHTML = tableHtml;
 
-                const element = document.getElementById('pdf-print-area');
-                const opt = { margin: 10, filename: 'AC_Replacement_Report.pdf', image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2, useCORS: true }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' } };
-                html2pdf().set(opt).from(element).save();
+                alert("Generating PDF... Please wait.");
+
+                setTimeout(() => {
+                    const element = document.getElementById('pdf-print-area');
+                    const opt = { margin: 10, filename: 'AC_Replacement_Report.pdf', image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2, useCORS: true }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' } };
+                    html2pdf().set(opt).from(element).save();
+                }, 500);
             }
         }
 
@@ -818,7 +845,13 @@
         function calcDur(s,e) { if(!s) return 0; return Math.ceil((new Date(e||new Date())-new Date(s))/(86400000)); }
         function renderCell(val) { const s=String(val).toUpperCase(); const c=s.includes('NEW')?'#22c55e':(s.includes('OLD')?'#eab308':'#94a3b8'); return `<td style="text-align:center; color:${c}; font-weight:bold;">${val}</td>`; }
         function renderRoomCard(name, val) { const s = String(val).toUpperCase(); const c = s.includes('NEW')?'#22c55e':(s.includes('OLD')?'#eab308':'#94a3b8'); return `<div style="background:#f8fafc; padding:8px; border-radius:6px; border:1px solid #e2e8f0;"><div style="font-size:0.7rem; color:#64748b; font-weight:bold; margin-bottom:2px;">${name}</div><div style="font-size:0.9rem; font-weight:bold; color:${c}">${val}</div></div>`; }
-        function getTotalAC(x) { return [x.l,x.si,x.o,x.m1,x.m2,x.m3,x.k,x.g,x.ki,x.sq,x.st,x.p].filter(v=>v&&v!=='X').length; }
+        function getTotalAC(x) { 
+            // FIX: ONLY COUNT IF NOT 'X'
+            return [x.l,x.si,x.o,x.m1,x.m2,x.m3,x.k,x.g,x.ki,x.sq,x.st,x.p].filter(v=> {
+                const s = String(v).toUpperCase();
+                return s && s!=='X';
+            }).length; 
+        }
         function hasACType(x, type) { return [x.l,x.si,x.o,x.m1,x.m2,x.m3,x.k,x.g,x.ki,x.sq,x.st,x.p].some(v=>String(v).toUpperCase().includes(type)); }
         function handleCompoundSearch() {
             const q = document.getElementById('compoundSearch').value.toLowerCase();
