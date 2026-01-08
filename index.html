@@ -199,8 +199,11 @@
                     <input type="text" id="detailsInput" placeholder="Search Details" class="login-input" style="margin:0;">
                 </div>
                 <div style="margin-top: 15px; display: flex; gap: 10px;">
+                    <!-- FIX 1: SEARCH ALL BUTTON -->
+                    <button onclick="searchAll()" style="background: #1e3a5f; color: white; padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer;">Search All</button>
+                    
                     <button onclick="applyTicketFilters()" style="background: #1e3a5f; color: white; padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer;">Search</button>
-                    <button onclick="resetTicketDashboard()" id="clearBtn" style="background: #ef4444; color: white; padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer; display:none;">Clear Search</button>
+                    <button onclick="resetTicketDashboard()" id="clearBtn" style="background: #ef4444; color: white; padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer; display:none;">Clear</button>
                 </div>
             </div>
 
@@ -437,6 +440,16 @@
             document.getElementById('systemGrid').innerHTML = html;
         }
 
+        // --- FIX 1: SEARCH ALL FUNCTION ---
+        function searchAll() {
+            document.getElementById('mrfInput').value = '';
+            document.getElementById('villaInput').value = '';
+            document.getElementById('systemInput').value = '';
+            document.getElementById('statusInput').value = '';
+            document.getElementById('detailsInput').value = '';
+            applyTicketFilters();
+        }
+
         function applySystemFilter(sys) {
             document.getElementById('systemInput').value = sys;
             document.getElementById('statusInput').value = 'pending';
@@ -533,13 +546,19 @@
                 Date: t.date, Time: t.time, 'MRF No': t.mrf, Villa: t.villa, 
                 System: t.system, Details: t.details, Status: t.status
             })));
+            // FIX 2: EXCEL FORMATTING
             const range = XLSX.utils.decode_range(ws['!ref']);
             for(let C = range.s.c; C <= range.e.c; ++C) {
                 const address = XLSX.utils.encode_col(C) + "1";
                 if(!ws[address]) continue;
-                ws[address].s = { font: { bold: true, color: { rgb: "FFFFFF" } }, fill: { fgColor: { rgb: "1E3A5F" } }, alignment: { horizontal: "center" } };
+                ws[address].s = { 
+                    font: { bold: true, color: { rgb: "FFFFFF" } }, 
+                    fill: { fgColor: { rgb: "1E3A5F" } }, 
+                    alignment: { horizontal: "center", vertical: "center" },
+                    border: { top: { style: "thin", color: { auto: 1 } } }
+                };
             }
-            ws['!cols'] = Object.keys(dataToExport[0] || {}).map(() => ({ wch: 20 }));
+            ws['!cols'] = Object.keys(dataToExport[0] || {}).map(() => ({ wch: 18 }));
             const wb = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(wb, ws, "Report");
             XLSX.writeFile(wb, `Maintenance_Report_${ticketYear}.xlsx`);
@@ -557,7 +576,6 @@
             
             if(dataToExport.length === 0) { alert("No data to export."); return; }
 
-            // Build PDF HTML
             let tableHtml = `<table class="pdf-table"><thead><tr><th>Date</th><th>MRF</th><th>Villa</th><th>System</th><th>Details</th><th>Status</th></tr></thead><tbody>`;
             tableHtml += dataToExport.map(t => `<tr><td>${t.date}</td><td>${t.mrf}</td><td>${t.villa}</td><td>${t.system}</td><td>${t.details}</td><td>${t.status}</td></tr>`).join('');
             tableHtml += `</tbody></table>`;
@@ -566,18 +584,11 @@
             document.getElementById('pdfDate').innerText = `Year: ${ticketYear} | Generated: ${new Date().toLocaleDateString()}`;
             document.getElementById('pdfContent').innerHTML = tableHtml;
 
-            // Add loading alert to ensure data is ready
             alert("Generating PDF... Please wait.");
 
             setTimeout(() => {
                 const element = document.getElementById('pdf-print-area');
-                const opt = { 
-                    margin: 10, 
-                    filename: `Tickets_${ticketYear}.pdf`, 
-                    image: { type: 'jpeg', quality: 0.98 }, 
-                    html2canvas: { scale: 2, useCORS: true }, 
-                    jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' } 
-                };
+                const opt = { margin: 10, filename: `Tickets_${ticketYear}.pdf`, image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2, useCORS: true }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' } };
                 html2pdf().set(opt).from(element).save();
             }, 500);
         }
@@ -613,19 +624,17 @@
             }).filter(x => x.v && !String(x.v).toLowerCase().includes('villa'));
         }
         function renderCompound() {
-            // Renov Stats
             document.getElementById('rTotal').innerText = renovData.length;
             document.getElementById('rFull').innerText = renovData.filter(x=>isRenov(x.s,'full')).length;
             document.getElementById('rHalf').innerText = renovData.filter(x=>isRenov(x.s,'half')).length;
             document.getElementById('rProg').innerText = renovData.filter(x=>isRenov(x.s,'prog')).length;
             document.getElementById('rNon').innerText = renovData.filter(x=>isRenov(x.s,'non')).length;
 
-            // AC Stats
+            // FIX 3: AC STATS
             let tAc=0, nAc=0, oAc=0;
             acData.forEach(d => {
                 [d.l,d.si,d.o,d.m1,d.m2,d.m3,d.k,d.g,d.ki,d.sq,d.st,d.p].forEach(v => {
                     const s = String(v).toUpperCase();
-                    // ONLY COUNT IF NOT 'X'
                     if(s && s!=='X') { 
                         tAc++; 
                         if(s.includes('NEW')) nAc++; else oAc++; 
@@ -742,13 +751,14 @@
                 else if(compoundFilter === 'rnon') data = renovData.filter(x=>isRenov(x.s,'non'));
                 if(data.length === 0) { alert("No Renovation data to export."); return; }
                 const ws = XLSX.utils.json_to_sheet(data.map(x => ({ 'Villa No': x.v, 'Status': x.s, 'Cost': x.cost, 'Duration (Days)': calcDur(x.sD, x.eD), 'Notes': x.n })));
+                // FIX 2: EXCEL FORMATTING
                 const range = XLSX.utils.decode_range(ws['!ref']);
                 for(let C = range.s.c; C <= range.e.c; ++C) {
                     const address = XLSX.utils.encode_col(C) + "1";
                     if(!ws[address]) continue;
                     ws[address].s = { font: { bold: true }, fill: { fgColor: { rgb: "1E3A5F" } }, alignment: { horizontal: "center" } };
                 }
-                ws['!cols'] = [{wch:15}, {wch:20}, {wch:15}, {wch:15}, {wch:30}];
+                ws['!cols'] = [{wch:15}, {wch:20}, {wch:15}, {wch:30}];
                 XLSX.utils.book_append_sheet(wb, ws, "Renovation Report");
             } else {
                 let data = acData;
@@ -756,13 +766,14 @@
                 else if(compoundFilter === 'aold') data = acData.filter(x => hasACType(x, 'OLD'));
                 if(data.length === 0) { alert("No AC data to export."); return; }
                 const ws = XLSX.utils.json_to_sheet(data.map(x => ({ 'Villa No': x.v, 'Living Room': x.l, 'Sitting': x.si, 'Office': x.o, 'Master 1': x.m1, 'Master 2': x.m2, 'Master 3': x.m3, 'Kids': x.k, 'Guest': x.g, 'Kitchen': x.ki, 'SQ': x.sq, 'Store': x.st, 'Patio': x.p, 'Total ACs': getTotalAC(x) })));
+                // FIX 2: EXCEL FORMATTING
                 const range = XLSX.utils.decode_range(ws['!ref']);
                 for(let C = range.s.c; C <= range.e.c; ++C) {
                     const address = XLSX.utils.encode_col(C) + "1";
                     if(!ws[address]) continue;
                     ws[address].s = { font: { bold: true }, fill: { fgColor: { rgb: "1E3A5F" } }, alignment: { horizontal: "center" } };
                 }
-                ws['!cols'] = Object.keys(data[0]).map(() => ({ wch: 15 }));
+                ws['!cols'] = Object.keys(data[0]).map(() => ({ wch: 12 })); // Auto width
                 XLSX.utils.book_append_sheet(wb, ws, "AC Report");
             }
             XLSX.writeFile(wb, `Compound_Report_${new Date().toISOString().split('T')[0]}.xlsx`);
@@ -846,8 +857,8 @@
         function renderCell(val) { const s=String(val).toUpperCase(); const c=s.includes('NEW')?'#22c55e':(s.includes('OLD')?'#eab308':'#94a3b8'); return `<td style="text-align:center; color:${c}; font-weight:bold;">${val}</td>`; }
         function renderRoomCard(name, val) { const s = String(val).toUpperCase(); const c = s.includes('NEW')?'#22c55e':(s.includes('OLD')?'#eab308':'#94a3b8'); return `<div style="background:#f8fafc; padding:8px; border-radius:6px; border:1px solid #e2e8f0;"><div style="font-size:0.7rem; color:#64748b; font-weight:bold; margin-bottom:2px;">${name}</div><div style="font-size:0.9rem; font-weight:bold; color:${c}">${val}</div></div>`; }
         function getTotalAC(x) { 
-            // FIX: ONLY COUNT IF NOT 'X'
-            return [x.l,x.si,x.o,x.m1,x.m2,x.m3,x.k,x.g,x.ki,x.sq,x.st,x.p].filter(v=> {
+            // FIX 3: IGNORE 'X' CALCULATION
+            return [x.l,x.si,x.o,x.m1,x.m2,x.m3,x.k,x.g,x.ki,x.sq,x.st,x.p].filter(v => {
                 const s = String(v).toUpperCase();
                 return s && s!=='X';
             }).length; 
